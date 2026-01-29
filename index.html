@@ -144,28 +144,11 @@ async function handleAction(type) {
     const customInput = document.getElementById('customQuizzes');
     const customText = customInput ? customInput.value.trim() : "";
 
-    // 2. 更加聰明的「門衛檢查」
-    if (!key) {
-        alert("找不到 API Key，請檢查輸入！");
-        return;
-    }
+    if(!key || !text) return alert("請輸入 Key 和內容！");
 
-    if (type === 'note' && !text) {
-        alert("生成筆記需要『課文原文』內容！");
-        return;
-    }
-
-    if (type === 'quiz' && !text && !customText) {
-        alert("生成題目需要內容，請填寫『課文原文』或『自定義題目』！");
-        return;
-    }
-
-    // 3. 通過檢查，開始執行...
     const loading = document.getElementById('loading');
     loading.style.display = 'block';
-    
-    // ... 後續 AI 請求代碼 ...
-}
+
     
     let prompt = "";
     if(type === 'note') {
