@@ -91,7 +91,7 @@
 <textarea id="inputText" placeholder="在這裡貼上文章內容..."></textarea>
 
 <label>📝 2. 自定義題目 (可選)</label>
-<textarea id="customQuizzes" placeholder="例如：1. 1+1？ 答案：2"></textarea>
+<textarea id="" placeholder="例如：1. 1+1？ 答案：2"></textarea>
     
     <div class="controls">
         <span>題目數量：</span>
@@ -142,29 +142,41 @@ async function handleAction(type) {
     const count = document.getElementById('qCount').value;
     const loading = document.getElementById('loading');
     currentType = type;
-    // 這裡要確保你的 HTML 裡有 id="customQuizzes" 的 textarea
-    const customInput = document.getElementById('customQuizzes');
+    // 這裡要確保你的 HTML 裡有 id="" 的 textarea
+    const customInput = document.getElementById('');
     const customText = customInput ? customInput.value.trim() : "";
+    const customQuizzes = document.getElementById('customQuizzes').value.trim();
+
+if(customQuizzes) {
+    prompt = `請根據參考資料："${text}"，將以下老師指定的題目轉化為 JSON 格式並隨機打亂選項：\n${customQuizzes}`;
+} else {
+    prompt = `請根據參考資料："${text}"，自動生成 ${count} 條選擇題...`;
+}
 
     if(!key || !text) return alert("請輸入 Key 和內容！");
 
     const loading = document.getElementById('loading');
     loading.style.display = 'block';
 
+    document.getElementById('noteArea').style.display = 'none';
+    document.getElementById('quizArea').style.display = 'none';
+    document.getElementById('dlBtn').style.display = 'none';
+    document.getElementById('wsHeader').style.display = 'none';
     
     let prompt = "";
     if(type === 'note') {
         prompt = `你是一位名校老師。請根據以下內容生成一份給小學生的重點筆記：\n\n"${text}"`;
     } else {
        
-        if(customQuizzes) {
+        if() {
             prompt = `
+            你是一位專業的名校老師。請根據「參考資料」的內容，將「指定題目」格式化為一份標準的選擇題測驗。
             請根據參考資料："${text}"
             
             任務：將以下老師指定的題目轉化為 JSON 格式。
             
             指定題目：
-            ${customQuizzes}
+            ${}
             
             要求：
             1. 必須嚴格遵守老師的問題和正確答案。
