@@ -145,8 +145,9 @@ async function handleAction(type) {
     // 這裡要確保你的 HTML 裡有 id="" 的 textarea
     const customInput = document.getElementById('customQuizzes');
     const customText = customInput ? customInput.value.trim() : "";
-
-    if(!key || !text) return alert("請輸入 Key 和內容！");
+    
+   if (!key) return alert("請輸入 API Key！");
+if (!text && !customText) return alert("請至少在『課文原文』或『自定義題目』其中一處輸入內容！");
 
     const loading = document.getElementById('loading');
     loading.style.display = 'block';
@@ -157,9 +158,9 @@ async function handleAction(type) {
         prompt = `你是一位名校老師。請根據以下內容生成一份給小學生的重點筆記：\n\n"${text}"`;
     } else {
        
-        if() {
+        if(customText !== "") {
             prompt = `
-            你是一位專業的名校老師。請根據「參考資料」的內容，將「指定題目」格式化為一份標準的選擇題測驗。
+            你是一位專業的名校老師。請根據「參考資料」的內容，將「指定題目」格式化為一份標準的選擇題測驗，程度高級艱深。
             請根據參考資料："${text}"
             
             任務：將以下老師指定的題目轉化為 JSON 格式。
