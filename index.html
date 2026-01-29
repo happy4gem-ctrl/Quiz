@@ -149,7 +149,7 @@ async function handleAction(type) {
     if(type === 'note') {
         prompt = `你是一位名校老師。請根據以下內容生成一份給小學生的重點筆記：\n\n"${text}"`;
     } else {
-        // --- 這裡就是放置你提供的邏輯的地方 ---
+       
         if(customQuizzes) {
             prompt = `
             請根據參考資料："${text}"
