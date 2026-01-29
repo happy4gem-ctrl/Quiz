@@ -172,13 +172,6 @@ if(type === 'quiz') {
     }
     `;
 }
-
-    try {
-        const res = await fetch('https://api.chatanywhere.tech/v1/chat/completions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-            body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "user", content: prompt }] })
-        });
 const customQuizzes = document.getElementById('customQuizzes').value.trim();
 
 if(customQuizzes) {
@@ -186,6 +179,13 @@ if(customQuizzes) {
 } else {
     prompt = `請根據參考資料："${text}"，自動生成 ${count} 條選擇題...`;
 }
+    try {
+        const res = await fetch('https://api.chatanywhere.tech/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+            body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "user", content: prompt }] })
+        });
+
         const data = await res.json();
         const aiMsg = data.choices[0].message.content;
 
