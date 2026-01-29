@@ -135,50 +135,41 @@ async function handleAction(type) {
     const key = document.getElementById('apiKey').value.trim();
     const text = document.getElementById('inputText').value.trim();
     const count = document.getElementById('qCount').value;
-    const loading = document.getElementById('loading');
-    currentType = type;
     
+    // --- 新增這行：讀取自定義題目 ---
+    const customQuizzes = document.getElementById('customQuizzes').value.trim();
+    // ----------------------------
+
+    const loading = document.getElementById('loading');
     if(!key || !text) return alert("請輸入 Key 和內容！");
 
     loading.style.display = 'block';
-    document.getElementById('noteArea').style.display = 'none';
-    document.getElementById('quizArea').style.display = 'none';
-    document.getElementById('dlBtn').style.display = 'none';
-    document.getElementById('wsHeader').style.display = 'none';
-
-
-let prompt = "";
-if(type === 'quiz') {
-    prompt = `
-    你是一位專業的名校老師。請根據「參考資料」的內容，將「指定題目」格式化為一份標準的選擇題測驗。
     
-    【參考資料】：
-    "${text}"
-
-    【指定題目】：
-    (這裡請老師直接貼上你的問題和答案)
-
-    【任務要求】：
-    1. 嚴格遵守提供的問題和答案，不要自行創作新問題。
-    2. 每題必須提供 4 個選項。
-    3. 必須「隨機打亂」正確答案的位置，確保正確答案索引 (ans) 均勻分佈在 0, 1, 2, 3 之間。
-    4. 輸出格式必須是純 JSON，不要有任何解釋文字。
-
-    【輸出 JSON 範例】：
-    {
-      "quizzes": [
-        { "q": "問題文字", "options": ["選項1", "選項2", "選項3", "選項4"], "ans": 0 }
-      ]
+    let prompt = "";
+    if(type === 'note') {
+        prompt = `你是一位名校老師。請根據以下內容生成一份給小學生的重點筆記：\n\n"${text}"`;
+    } else {
+        // --- 這裡就是放置你提供的邏輯的地方 ---
+        if(customQuizzes) {
+            prompt = `
+            請根據參考資料："${text}"
+            
+            任務：將以下老師指定的題目轉化為 JSON 格式。
+            
+            指定題目：
+            ${customQuizzes}
+            
+            要求：
+            1. 必須嚴格遵守老師的問題和正確答案。
+            2. 為每題補齊另外 3 個干擾選項，總共 4 個選項。
+            3. 隨機打亂正確答案的位置 (ans)。
+            4. 輸出格式必須是純 JSON： { "quizzes": [ { "q": "問題", "options": ["A", "B", "C", "D"], "ans": 0 } ] }
+            `;
+        } else {
+            prompt = `請根據參考資料："${text}"，自動生成 ${count} 條選擇題，並隨機打亂正確答案位置。格式同上。`;
+        }
+        // ------------------------------------
     }
-    `;
-}
-const customQuizzes = document.getElementById('customQuizzes').value.trim();
-
-if(customQuizzes) {
-    prompt = `請根據參考資料："${text}"，將以下老師指定的題目轉化為 JSON 格式並隨機打亂選項：\n${customQuizzes}`;
-} else {
-    prompt = `請根據參考資料："${text}"，自動生成 ${count} 條選擇題...`;
-}
     try {
         const res = await fetch('https://api.chatanywhere.tech/v1/chat/completions', {
             method: 'POST',
