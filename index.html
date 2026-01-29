@@ -57,6 +57,25 @@
         }
         /* ------------------------------------------- */
 
+            @media print {
+    /* 把所有不需要印出來的雜物通通隱藏 */
+    nav, .btn-group, #apiKey, #inputText, .controls, #dlBtn, .loading, h1, label {
+        display: none !important;
+    }
+    /* 讓列印區域變回最簡單的白底黑字 */
+    body, .container {
+        background: white !important;
+        border: none !important;
+        box-shadow: none !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    #print-area {
+        display: block !important;
+    }
+}
+
     </style>
 </head>
         
