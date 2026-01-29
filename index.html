@@ -173,38 +173,39 @@ function renderQuiz(list) {
 function downloadPDF() {
     const element = document.getElementById('print-area');
     const header = document.getElementById('wsHeader');
-    const dlBtn = document.getElementById('dlBtn');
-
-    // 1. 下載前，確保內容是顯示出來的
+    
+    // 下載前暫時顯示頁眉
     header.style.display = 'block';
-    element.style.display = 'block'; // 強制顯示
-
-    // 2. 暫時隱藏下載按鈕自己，避免按鈕也被印進 PDF
-    dlBtn.style.display = 'none';
 
     const opt = {
-        margin:       [15, 10, 15, 10], // 上, 左, 下, 右
-        filename:     '智多星工作紙.pdf',
+        margin:       10,
+        filename:     currentType === 'note' ? '學習筆記.pdf' : '小測試.pdf',
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { 
-            scale: 2, 
-            useCORS: true, // 允許跨域資源
-            letterRendering: true 
-        },
+        html2canvas:  { scale: 2 },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    // 3. 給瀏覽器一點時間 (500ms) 渲染畫面，再開始轉 PDF
-    setTimeout(() => {
-        html2pdf().set(opt).from(element).save().then(() => {
-            // 4. 下載完成後，恢復下載按鈕顯示
-            dlBtn.style.display = 'inline-block';
-        }).catch(err => {
-            console.error("PDF Error:", err);
-            dlBtn.style.display = 'inline-block';
-        });
-    }, 500);
+    // 執行下載
+    html2pdf().set(opt).from(element).save().then(() => {
+        // 下載完後恢復原狀（如果是互動模式，可以隱藏頁眉）
+        // header.style.display = 'none'; 
+/* 原本的 print-area 不要設為 display: none */
+#print-area {
+    background: white;
+    width: 100%;
 }
+
+/* 只有在「非列印」且「未生成」時隱藏內容 */
+#noteArea:empty, #quizArea:empty {
+    display: none;
+}
+
+/* 這是關鍵：確保下載時，裡面的文字顏色是黑色的，避免背景太白導致看不到字 */
+@media screen {
+    #print-area { color: #333; }
+}
+        
+    });
 }
 </script>
 
