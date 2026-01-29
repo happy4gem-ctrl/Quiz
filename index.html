@@ -3,28 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智多星互動學習王 v6</title>
+    <title>智多星互動學習王 v7 (修復版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <style>
         :root { --primary: #FF9800; --secondary: #4CAF50; --bg: #FFF9E6; --sidebar-w: 250px; }
         body { font-family: 'Segoe UI', "Microsoft JhengHei", sans-serif; background-color: var(--bg); margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
         /* 左側邊欄 */
-        #sidebar { width: var(--sidebar-w); background: #333; color: white; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; transition: 0.3s; }
+        #sidebar { width: var(--sidebar-w); background: #333; color: white; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; }
         #sidebar h2 { font-size: 18px; color: #FFD54F; text-align: center; margin-top: 0; }
-        .history-item { background: #444; padding: 10px; margin-bottom: 10px; border-radius: 8px; cursor: pointer; border-left: 4px solid transparent; transition: 0.2s; font-size: 14px; }
+        .history-item { background: #444; padding: 10px; margin-bottom: 10px; border-radius: 8px; cursor: pointer; border-left: 4px solid transparent; transition: 0.2s; font-size: 14px; position: relative; }
         .history-item:hover { background: #555; border-left-color: var(--primary); }
         .history-item.active { background: #555; border-left-color: var(--secondary); }
-        .del-btn { float: right; color: #ff6b6b; cursor: pointer; font-weight: bold; }
+        .del-btn { position: absolute; right: 10px; top: 10px; color: #ff6b6b; cursor: pointer; font-weight: bold; padding: 0 5px; }
 
         /* 右側主內容 */
         #main-content { flex: 1; padding: 30px; overflow-y: auto; position: relative; }
         .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
         
-        /* 輸入與控制區 (學生模式會隱藏) */
+        /* 輸入與控制區 */
         .teacher-only { border: 2px dashed #ddd; padding: 15px; border-radius: 10px; margin-bottom: 20px; background: #fafafa; }
         h1 { text-align: center; color: #E67E22; margin-top: 0; }
         
@@ -36,32 +35,33 @@
 
         /* 測驗區 */
         .q-card { background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .opt-btn { display: block; width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #f0f0f0; border-radius: 50px; background: white; text-align: left; cursor: pointer; transition: 0.2s; }
+        .opt-btn { display: block; width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #f0f0f0; border-radius: 50px; background: white; text-align: left; cursor: pointer; transition: 0.2s; color: #333; }
         .opt-btn:hover { background: #fdfdfd; border-color: #ccc; }
-        .correct { background: var(--secondary) !important; color: white; border-color: var(--secondary); }
-        .wrong { background: #F44336 !important; color: white; border-color: #F44336; }
+        
+        /* 強制顏色樣式 (避免被瀏覽器預設樣式覆蓋) */
+        .correct-ans { background-color: #4CAF50 !important; color: white !important; border-color: #4CAF50 !important; }
+        .wrong-ans { background-color: #F44336 !important; color: white !important; border-color: #F44336 !important; }
 
         /* 分享彈窗 */
         #shareModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 999; }
         .modal-content { background: white; padding: 30px; border-radius: 15px; text-align: center; max-width: 400px; width: 90%; }
-        #qrcode { margin: 20px auto; display: flex; justify-content: center; }
+        #qrcode { margin: 20px auto; display: flex; justify-content: center; min-height: 150px; align-items: center; }
         
-        /* 學生模式樣式調整 */
-        body.student-mode #sidebar { display: none; } /* 學生看不到歷史記錄 */
-        body.student-mode .teacher-only { display: none; } /* 學生看不到輸入框 */
+        /* 學生模式 */
+        body.student-mode #sidebar { display: none; }
+        body.student-mode .teacher-only { display: none; }
         body.student-mode .container { max-width: 600px; border: 4px solid #4CAF50; }
         body.student-mode .btn-share { display: none; }
-        body.student-mode .btn-retry { display: block; } /* 顯示重做按鈕 */
+        body.student-mode .btn-retry { display: block; }
     </style>
 </head>
 <body>
 
 <aside id="sidebar">
     <h2>📂 題庫歷史</h2>
-    <div id="historyList">
-        </div>
-    <div style="margin-top: auto; font-size: 12px; color: #888; text-align: center;">
-        題目保存在你的電腦中
+    <div id="historyList"></div>
+    <div style="margin-top: auto; padding: 10px; font-size: 12px; color: #aaa; text-align: center;">
+        記錄存在本機瀏覽器
     </div>
 </aside>
 
@@ -84,7 +84,6 @@
                     <option value="3">3 題</option>
                     <option value="5" selected>5 題</option>
                     <option value="10">10 題</option>
-                    <option value="全部">盡量出（全部）</option>
                 </select>
                 <button class="btn-gen" onclick="generateQuiz()" id="genBtn">🚀 生成題目</button>
             </div>
@@ -94,10 +93,9 @@
         <div id="quizArea" style="display:none;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 style="margin:0; color: #333;">🧠 挑戰小測試</h2>
-                <button class="btn-retry" onclick="renderQuiz(currentQuizData)">🔄 重做一次</button>
+                <button class="btn-retry" onclick="resetQuiz()">🔄 重做一次</button>
             </div>
             <div id="quizContent"></div>
-            
             <button class="btn-share" onclick="showShareModal()">🔗 生成學生連結 / QR Code</button>
         </div>
     </div>
@@ -106,40 +104,55 @@
 <div id="shareModal">
     <div class="modal-content">
         <h3>📲 分享給學生</h3>
-        <p>學生掃碼或點擊連結即可直接做題！</p>
+        <p>掃描 QR Code 或複製連結</p>
         <div id="qrcode"></div>
-        <input type="text" id="shareLink" readonly onclick="this.select()" style="text-align: center; background: #f0f0f0;">
+        <input type="text" id="shareLink" readonly onclick="this.select()" style="text-align: center; background: #f0f0f0; font-size: 12px; color: #555;">
         <button onclick="document.getElementById('shareModal').style.display='none'" style="background: #ccc; margin-top: 10px; color: #333;">關閉</button>
     </div>
 </div>
 
 <script>
-let currentQuizData = []; // 存儲當前題目
-let historyData = JSON.parse(localStorage.getItem('quizHistory')) || [];
+// 全局變量
+let currentQuizData = [];
+let historyData = [];
 
-// 初始化：檢查是否是學生模式 (網址有無 ?data=...)
+// 初始化
 window.onload = function() {
-    const params = new URLSearchParams(window.location.search);
-    const compressedData = params.get('data');
+    try {
+        historyData = JSON.parse(localStorage.getItem('quizHistory')) || [];
+        
+        const params = new URLSearchParams(window.location.search);
+        const compressedData = params.get('data');
 
-    if (compressedData) {
-        // --- 學生模式 ---
-        document.body.classList.add('student-mode');
-        document.getElementById('appTitle').innerText = "📝 同學，請開始挑戰！";
-        try {
-            // 解壓數據
+        if (compressedData) {
+            // 學生模式
+            if (typeof LZString === 'undefined') {
+                throw new Error("外掛程式 LZString 載入失敗，請檢查網絡");
+            }
+            document.body.classList.add('student-mode');
+            document.getElementById('appTitle').innerText = "📝 同學，請開始挑戰！";
+            
             const jsonStr = LZString.decompressFromEncodedURIComponent(compressedData);
+            if(!jsonStr) throw new Error("數據解壓縮失敗");
+            
             const data = JSON.parse(jsonStr);
             currentQuizData = data;
             document.getElementById('quizArea').style.display = 'block';
             renderQuiz(data);
-        } catch (e) {
-            alert("連結無效或數據損壞！");
+        } else {
+            // 老師模式
+            renderHistory();
         }
-    } else {
-        // --- 老師模式 ---
-        renderHistory(); // 載入左側歷史
+    } catch (e) {
+        alert("初始化錯誤：" + e.message);
     }
+};
+
+// 捕捉全域錯誤 (Debug 用)
+window.onerror = function(message, source, lineno, colno, error) {
+    console.error("JS Error:", message);
+    // 如果按鈕沒反應，這個 alert 會告訴原因
+    // alert("系統偵測到錯誤: " + message); 
 };
 
 async function generateQuiz() {
@@ -154,36 +167,40 @@ async function generateQuiz() {
     document.getElementById('loading').style.display = 'block';
     document.getElementById('genBtn').disabled = true;
 
+    // Prompt 優化
     let prompt = "";
+    const baseReq = `回傳純JSON格式: { "quizzes": [ { "q": "題目", "options": ["A","B","C","D"], "ans": 0 } ] }。注意：ans必須是0-3的數字。`;
+    
     if(customText) {
-        prompt = `參考內容："${text}"\n將以下題目轉為JSON並補齊干擾項，隨機打亂ans位置(0-3)：\n${customText}\n格式：{ "quizzes": [ { "q": "...", "options": ["A","B","C","D"], "ans": 0 } ] }`;
+        prompt = `參考內容："${text}"。請將以下題目轉為JSON並補齊選項，隨機打亂ans位置：\n${customText}\n${baseReq}`;
     } else {
-        prompt = `根據內容："${text}"\n生成 ${count} 條選擇題。隨機打亂ans位置(0-3)。格式：{ "quizzes": [ { "q": "...", "options": ["A","B","C","D"], "ans": 0 } ] }`;
+        prompt = `根據內容："${text}"。生成 ${count} 條選擇題，隨機打亂ans位置。\n${baseReq}`;
     }
 
     try {
         const res = await fetch('https://api.chatanywhere.tech/v1/chat/completions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-            body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "user", content: prompt }] })
+            body: JSON.stringify({ model: "gpt-3.5-turbo", messages: [{ role: "user", content: prompt }] })
         });
         
         const data = await res.json();
-        const jsonMatch = data.choices[0].message.content.match(/\{[\s\S]*\}/);
+        const content = data.choices[0].message.content;
+        
+        // 嘗試解析 JSON (處理可能存在的 Markdown 符號)
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
         if(jsonMatch) {
             const result = JSON.parse(jsonMatch[0]);
             currentQuizData = result.quizzes;
             
-            // 1. 顯示題目
             document.getElementById('quizArea').style.display = 'block';
             renderQuiz(currentQuizData);
-            
-            // 2. 存入歷史
             saveToHistory(text || customText, currentQuizData);
+        } else {
+            throw new Error("AI 回傳格式不正確");
         }
     } catch (e) {
-        alert("生成失敗，請重試");
-        console.error(e);
+        alert("生成失敗：" + e.message);
     } finally {
         document.getElementById('loading').style.display = 'none';
         document.getElementById('genBtn').disabled = false;
@@ -193,6 +210,7 @@ async function generateQuiz() {
 function renderQuiz(quizzes) {
     const container = document.getElementById('quizContent');
     container.innerHTML = "";
+    
     quizzes.forEach((item, qIdx) => {
         const card = document.createElement('div');
         card.className = 'q-card';
@@ -201,17 +219,29 @@ function renderQuiz(quizzes) {
         item.options.forEach((opt, oIdx) => {
             const btn = document.createElement('button');
             btn.className = 'opt-btn';
-            btn.innerText = opt;
-            btn.onclick = () => {
+            btn.innerText = opt; // 確保按鈕有文字
+            
+            // 綁定點擊事件
+            btn.onclick = function() {
+                // 1. 禁用該題所有按鈕
                 const btns = card.querySelectorAll('.opt-btn');
                 btns.forEach(b => b.style.pointerEvents = 'none');
-                if(oIdx === parseInt(item.ans)) {
-                    btn.classList.add('correct');
-                    btn.innerText += " ✅";
+                
+                // 2. 獲取正確答案 (寬鬆比較，防止 string/number 問題)
+                const correctIdx = item.ans; 
+                
+                // 3. 判斷對錯
+                if(oIdx == correctIdx) {
+                    btn.classList.add('correct-ans');
+                    btn.innerHTML += " ✅";
                 } else {
-                    btn.classList.add('wrong');
-                    btn.innerText += " ❌";
-                    btns[parseInt(item.ans)].classList.add('correct');
+                    btn.classList.add('wrong-ans');
+                    btn.innerHTML += " ❌";
+                    // 顯示正確答案
+                    if(btns[correctIdx]) {
+                        btns[correctIdx].classList.add('correct-ans');
+                        btns[correctIdx].innerHTML += " 👈";
+                    }
                 }
             };
             card.appendChild(btn);
@@ -220,16 +250,15 @@ function renderQuiz(quizzes) {
     });
 }
 
-// --- 歷史記錄功能 ---
+function resetQuiz() {
+    renderQuiz(currentQuizData);
+}
+
+// --- 歷史記錄 ---
 function saveToHistory(title, quizData) {
-    const shortTitle = title.substring(0, 15) + (title.length>15 ? "..." : "");
-    const newItem = {
-        id: Date.now(),
-        title: shortTitle,
-        date: new Date().toLocaleDateString(),
-        data: quizData
-    };
-    historyData.unshift(newItem); // 加到最前面
+    const shortTitle = (title.substring(0, 10) || "未命名") + "...";
+    const newItem = { id: Date.now(), title: shortTitle, date: new Date().toLocaleDateString(), data: quizData };
+    historyData.unshift(newItem);
     localStorage.setItem('quizHistory', JSON.stringify(historyData));
     renderHistory();
 }
@@ -240,60 +269,78 @@ function renderHistory() {
     historyData.forEach((item, index) => {
         const div = document.createElement('div');
         div.className = 'history-item';
+        // 如果這個項目是當前顯示的，加上 active
+        if(JSON.stringify(currentQuizData) === JSON.stringify(item.data)) {
+            div.classList.add('active');
+        }
+        
         div.innerHTML = `
             <div>${item.title}</div>
             <div style="font-size:12px; color:#aaa;">${item.date}</div>
-            <span class="del-btn" onclick="deleteHistory(event, ${index})">×</span>
+            <span class="del-btn">×</span>
         `;
+        
+        // 點擊載入
         div.onclick = (e) => {
-            if(e.target.className !== 'del-btn') {
-                currentQuizData = item.data;
-                document.getElementById('quizArea').style.display = 'block';
-                renderQuiz(item.data);
-                // 標記選中
-                document.querySelectorAll('.history-item').forEach(i=>i.classList.remove('active'));
-                div.classList.add('active');
+            currentQuizData = item.data;
+            document.getElementById('quizArea').style.display = 'block';
+            renderQuiz(item.data);
+            renderHistory(); // 重新渲染以更新 active 狀態
+        };
+        
+        // 點擊刪除
+        div.querySelector('.del-btn').onclick = (e) => {
+            e.stopPropagation();
+            if(confirm("刪除此記錄？")) {
+                historyData.splice(index, 1);
+                localStorage.setItem('quizHistory', JSON.stringify(historyData));
+                renderHistory();
             }
         };
+        
         list.appendChild(div);
     });
 }
 
-function deleteHistory(e, index) {
-    e.stopPropagation();
-    if(confirm("確定刪除這個記錄嗎？")) {
-        historyData.splice(index, 1);
-        localStorage.setItem('quizHistory', JSON.stringify(historyData));
-        renderHistory();
-    }
-}
-
-// --- 分享功能 ---
+// --- 分享功能 (修復版) ---
 function showShareModal() {
-    if(!currentQuizData || currentQuizData.length === 0) return alert("沒有題目可以分享！");
+    if(!currentQuizData || currentQuizData.length === 0) return alert("請先生成題目！");
 
-    // 1. 壓縮數據
-    const jsonStr = JSON.stringify(currentQuizData);
-    const compressed = LZString.compressToEncodedURIComponent(jsonStr);
-    
-    // 2. 生成連結 (當前網址 + ?data=...)
-    // 注意：如果是 Vercel，它會自動變成你的 Vercel 網址
-    const baseUrl = window.location.href.split('?')[0];
-    const fullLink = `${baseUrl}?data=${compressed}`;
-    
-    // 3. 顯示 Link
+    const modal = document.getElementById('shareModal');
+    const qrContainer = document.getElementById('qrcode');
     const linkInput = document.getElementById('shareLink');
-    linkInput.value = fullLink;
     
-    // 4. 生成 QR Code
-    document.getElementById('qrcode').innerHTML = "";
-    new QRCode(document.getElementById("qrcode"), {
-        text: fullLink,
-        width: 150,
-        height: 150
-    });
-    
-    document.getElementById('shareModal').style.display = 'flex';
+    modal.style.display = 'flex';
+    qrContainer.innerHTML = ""; // 清空舊 QR
+    linkInput.value = "正在生成...";
+
+    try {
+        // 1. 壓縮
+        const jsonStr = JSON.stringify(currentQuizData);
+        if (typeof LZString === 'undefined') throw new Error("LZString 未載入");
+        const compressed = LZString.compressToEncodedURIComponent(jsonStr);
+        
+        // 2. 組合連結
+        const baseUrl = window.location.href.split('?')[0];
+        const fullLink = `${baseUrl}?data=${compressed}`;
+        linkInput.value = fullLink;
+
+        // 3. 嘗試生成 QR Code
+        if (typeof QRCode !== 'undefined') {
+            new QRCode(qrContainer, {
+                text: fullLink,
+                width: 150,
+                height: 150,
+                correctLevel : QRCode.CorrectLevel.L // 使用低容錯率以減少點陣數量
+            });
+        } else {
+            qrContainer.innerHTML = "<p style='color:red'>QR Code 外掛未載入，請直接複製連結</p>";
+        }
+        
+    } catch (e) {
+        alert("分享連結生成失敗: " + e.message);
+        linkInput.value = "生成失敗";
+    }
 }
 </script>
 </body>
