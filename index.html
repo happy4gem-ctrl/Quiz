@@ -140,6 +140,8 @@ async function handleAction(type) {
     const key = document.getElementById('apiKey').value.trim();
     const text = document.getElementById('inputText').value.trim();
     const count = document.getElementById('qCount').value;
+    const loading = document.getElementById('loading');
+    currentType = type;
     // 這裡要確保你的 HTML 裡有 id="customQuizzes" 的 textarea
     const customInput = document.getElementById('customQuizzes');
     const customText = customInput ? customInput.value.trim() : "";
