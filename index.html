@@ -39,6 +39,26 @@
         /* 列印時顯示頁眉 */
         @media print {
             .worksheet-header { display: block !important; }
+
+        /* 確保下載區域背景與寬度 */
+        #print-area { 
+            background: white; 
+            width: 100%; 
+        }
+
+        /* 只有在裡面沒有內容時才隱藏，這能防止 html2pdf 抓不到高度 */
+        #noteArea:empty, #quizArea:empty { 
+            display: none; 
+        }
+
+        /* 在屏幕顯示時確保文字顏色足夠深 */
+        @media screen { 
+            #print-area { color: #333; }
+        }
+        /* ------------------------------------------- */
+
+    </style>
+</head>
         }
     </style>
 </head>
@@ -189,21 +209,7 @@ function downloadPDF() {
     html2pdf().set(opt).from(element).save().then(() => {
         // 下載完後恢復原狀（如果是互動模式，可以隱藏頁眉）
         // header.style.display = 'none'; 
-/* 原本的 print-area 不要設為 display: none */
-#print-area {
-    background: white;
-    width: 100%;
-}
 
-/* 只有在「非列印」且「未生成」時隱藏內容 */
-#noteArea:empty, #quizArea:empty {
-    display: none;
-}
-
-/* 這是關鍵：確保下載時，裡面的文字顏色是黑色的，避免背景太白導致看不到字 */
-@media screen {
-    #print-area { color: #333; }
-}
         
     });
 }
