@@ -144,7 +144,6 @@ async function handleAction(type) {
     const customText = customInput ? customInput.value.trim() : "";
     // ----------------------------
 
-    const loading = document.getElementById('loading');
     if(!key || !text) return alert("請輸入 Key 和內容！");
 
     loading.style.display = 'block';
