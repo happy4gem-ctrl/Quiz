@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智多星互動學習王 v5 - 下載版</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root { --primary: #FF9800; --secondary: #4CAF50; --error: #F44336; --bg: #FFF9E6; }
+        body { font-family: 'Segoe UI', "Microsoft JhengHei", Arial, sans-serif; background-color: var(--bg); padding: 20px; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); border: 4px solid #FFD54F; }
+        
+        /* 表單與輸入 */
+        input, select, textarea { width: 100%; padding: 12px; margin-top: 8px; border: 2px solid #eee; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
+        textarea { height: 200px; }
+        .controls { display: flex; align-items: center; gap: 15px; margin: 20px 0; background: #FFF3E0; padding: 15px; border-radius: 12px; }
+
+        /* 功能按鈕 */
+        .btn-group { display: flex; gap: 15px; margin-bottom: 20px; }
+        button.action-btn { flex: 1; padding: 18px; border-radius: 15px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 18px; transition: 0.3s; }
+        .btn-note { background: #3498DB; }
+        .btn-quiz { background: #9B59B6; }
+        
+        /* 下載按鈕樣式 */
+        .download-btn { background: #2ECC71 !important; margin-top: 15px; width: auto; padding: 10px 25px; display: none; }
+
+        /* PDF 列印區域專屬樣式 */
+        #print-area { padding: 40px; background: white; border-radius: 10px; }
+        .worksheet-header { display: none; border-bottom: 2px solid #333; margin-bottom: 20px; padding-bottom: 10px; }
+        .worksheet-header div { display: flex; justify-content: space-between; font-weight: bold; }
+
+        .result-section { margin-top: 30px; border-radius: 20px; padding: 20px; display: none; border: 2px solid #ddd; }
+        .q-card { background: #f9f9f9; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eee; }
+        .opt-btn { display: block; width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #eee; border-radius: 50px; background: white; text-align: left; cursor: pointer; }
+        .correct { background: var(--secondary) !important; color: white; border-color: var(--secondary); }
+        .wrong { background: var(--error) !important; color: white; border-color: var(--error); }
+        .loading { text-align: center; color: #E67E22; font-weight: bold; display: none; margin: 20px; }
+
+        /* 列印時顯示頁眉 */
+        @media print {
+            .worksheet-header { display: block !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🐼 智多星互動學習王 v5</h1>
+    
+    <input type="password" id="apiKey" placeholder="在此輸入 API Key">
+    <textarea id="inputText" placeholder="貼上學習內容..."></textarea>
+
+    <div class="controls">
+        <span>題目數量：</span>
+        <select id="qCount">
+            <option value="3">3 題</option>
+            <option value="5" selected>5 題</option>
+            <option value="10">10 題</option>
+             <option value="全部">盡量多出 (全部)</option>
+        </select>
+    </div>
+
+    <div class="btn-group">
+        <button class="btn-note action-btn" onclick="handleAction('note')">📝 生成筆記</button>
+        <button class="btn-quiz action-btn" onclick="handleAction('quiz')">❓ 生成題目</button>
+    </div>
+
+    <div id="loading" class="loading">正在準備你的工作紙... ⏳</div>
+
+    <div id="print-area">
+        <div class="worksheet-header" id="wsHeader">
+            <h2 id="wsTitle" style="text-align:center; color: #333;">學習工作紙</h2>
+            <div>
+                <span>姓名：____________________</span>
+                <span>日期：2026年___月___日</span>
+                <span>得分：________</span>
+            </div>
+        </div>
+        
+        <div id="noteArea" class="result-section">
+            <div id="noteContent"></div>
+        </div>
+
+        <div id="quizArea" class="result-section">
+            <div id="quizContent"></div>
+        </div>
+    </div>
+
+    <button id="dlBtn" class="action-btn download-btn" onclick="downloadPDF()">📥 下載為 PDF 工作紙</button>
+</div>
+
+<script>
+let currentType = '';
+
+async function handleAction(type) {
+    const key = document.getElementById('apiKey').value.trim();
+    const text = document.getElementById('inputText').value.trim();
+    const count = document.getElementById('qCount').value;
+    const loading = document.getElementById('loading');
+    currentType = type;
+    
+    if(!key || !text) return alert("請輸入 Key 和內容！");
+
+    loading.style.display = 'block';
+    document.getElementById('noteArea').style.display = 'none';
+    document.getElementById('quizArea').style.display = 'none';
+    document.getElementById('dlBtn').style.display = 'none';
+    document.getElementById('wsHeader').style.display = 'none';
+
+    let prompt = "";
+    if(type === 'note') {
+        prompt = `請根據以下內容生成一份條理分明、給小學生看的重點筆記，多用 Emoji 分點列出：\n\n"${text}"`;
+    } else {
+        prompt = `請根據內容生成 ${count} 條選擇題，題目高級艱深。正確答案 'ans' 需隨機分佈。JSON格式：\n{ "quizzes": [ { "q": "問題", "options": ["A", "B", "C", "D"], "ans": 0 } ] }\n\n內容："${text}"`;
+    }
+
+    try {
+        const res = await fetch('https://api.chatanywhere.tech/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+            body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "user", content: prompt }] })
+        });
+
+        const data = await res.json();
+        const aiMsg = data.choices[0].message.content;
+
+        if(type === 'note') {
+            document.getElementById('wsTitle').innerText = "📚 中華文化 - 溫習筆記";
+            document.getElementById('noteContent').innerHTML = aiMsg.replace(/\n/g, '<br>');
+            document.getElementById('noteArea').style.display = 'block';
+        } else {
+            const jsonMatch = aiMsg.match(/\{[\s\S]*\}/);
+            const quizData = JSON.parse(jsonMatch[0]);
+            renderQuiz(quizData.quizzes);
+            document.getElementById('wsTitle').innerText = "🧠 知識挑戰 - 小測試";
+            document.getElementById('quizArea').style.display = 'block';
+        }
+        document.getElementById('dlBtn').style.display = 'inline-block';
+    } catch (e) {
+        alert("出錯了，請重試！");
+    } finally {
+        loading.style.display = 'none';
+    }
+}
+
+function renderQuiz(list) {
+    const container = document.getElementById('quizContent');
+    container.innerHTML = "";
+    list.forEach((item, qIdx) => {
+        const card = document.createElement('div');
+        card.className = 'q-card';
+        card.innerHTML = `<p><strong>Q${qIdx+1}. ${item.q}</strong></p>`;
+        item.options.forEach((opt, oIdx) => {
+            const btn = document.createElement('button');
+            btn.className = 'opt-btn';
+            btn.innerText = opt;
+            btn.onclick = () => {
+                const btns = card.querySelectorAll('.opt-btn');
+                btns.forEach(b => b.style.pointerEvents = 'none');
+                if(oIdx === parseInt(item.ans)) {
+                    btn.classList.add('correct');
+                } else {
+                    btn.classList.add('wrong');
+                    btns[parseInt(item.ans)].classList.add('correct');
+                }
+            };
+            card.appendChild(btn);
+        });
+        container.appendChild(card);
+    });
+}
+
+function downloadPDF() {
+    const element = document.getElementById('print-area');
+    const header = document.getElementById('wsHeader');
+    
+    // 下載前暫時顯示頁眉
+    header.style.display = 'block';
+
+    const opt = {
+        margin:       10,
+        filename:     currentType === 'note' ? '學習筆記.pdf' : '小測試.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    // 執行下載
+    html2pdf().set(opt).from(element).save().then(() => {
+        // 下載完後恢復原狀（如果是互動模式，可以隱藏頁眉）
+        // header.style.display = 'none'; 
+    });
+}
+</script>
+
+</body>
+</html>
