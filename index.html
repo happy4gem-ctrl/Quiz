@@ -138,7 +138,7 @@ async function handleAction(type) {
     const key = document.getElementById('apiKey').value.trim();
     const text = document.getElementById('inputText').value.trim();
     const count = document.getElementById('qCount').value;
-    
+    const customQuizzes = document.getElementById('customQuizzes').value.trim();
     // --- 新增這行：讀取自定義題目 ---
     const customInput = document.getElementById('customQuizzes');
     const customText = customInput ? customInput.value.trim() : "";
