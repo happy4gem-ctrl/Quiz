@@ -3,138 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智多星互動學習王 v5 - 下載版</title>
+    <title>智多星互動學習王 v6</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
     <style>
-        :root { --primary: #FF9800; --secondary: #4CAF50; --error: #F44336; --bg: #FFF9E6; }
-        body { font-family: 'Segoe UI', "Microsoft JhengHei", Arial, sans-serif; background-color: var(--bg); padding: 20px; color: #333; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); border: 4px solid #FFD54F; }
+        :root { --primary: #FF9800; --secondary: #4CAF50; --bg: #FFF9E6; --sidebar-w: 250px; }
+        body { font-family: 'Segoe UI', "Microsoft JhengHei", sans-serif; background-color: var(--bg); margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        /* 表單與輸入 */
-        input, select, textarea { width: 100%; padding: 12px; margin-top: 8px; border: 2px solid #eee; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
-        textarea { height: 200px; }
-        .controls { display: flex; align-items: center; gap: 15px; margin: 20px 0; background: #FFF3E0; padding: 15px; border-radius: 12px; }
+        /* 左側邊欄 */
+        #sidebar { width: var(--sidebar-w); background: #333; color: white; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; transition: 0.3s; }
+        #sidebar h2 { font-size: 18px; color: #FFD54F; text-align: center; margin-top: 0; }
+        .history-item { background: #444; padding: 10px; margin-bottom: 10px; border-radius: 8px; cursor: pointer; border-left: 4px solid transparent; transition: 0.2s; font-size: 14px; }
+        .history-item:hover { background: #555; border-left-color: var(--primary); }
+        .history-item.active { background: #555; border-left-color: var(--secondary); }
+        .del-btn { float: right; color: #ff6b6b; cursor: pointer; font-weight: bold; }
 
-        /* 功能按鈕 */
-        .btn-group { display: flex; gap: 15px; margin-bottom: 20px; }
-        button.action-btn { flex: 1; padding: 18px; border-radius: 15px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 18px; transition: 0.3s; }
-        .btn-note { background: #3498DB; }
-        .btn-quiz { background: #9B59B6; }
+        /* 右側主內容 */
+        #main-content { flex: 1; padding: 30px; overflow-y: auto; position: relative; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
         
-        /* 下載按鈕樣式 */
-        .download-btn { background: #2ECC71 !important; margin-top: 15px; width: auto; padding: 10px 25px; display: none; }
+        /* 輸入與控制區 (學生模式會隱藏) */
+        .teacher-only { border: 2px dashed #ddd; padding: 15px; border-radius: 10px; margin-bottom: 20px; background: #fafafa; }
+        h1 { text-align: center; color: #E67E22; margin-top: 0; }
+        
+        input, textarea, select { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+        button { padding: 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; width: 100%; margin-top: 5px; color: white; }
+        .btn-gen { background: var(--primary); }
+        .btn-share { background: #2196F3; margin-top: 15px; }
+        .btn-retry { background: #607D8B; width: auto; padding: 8px 20px; display: none; margin: 0 auto; }
 
-        /* PDF 列印區域專屬樣式 */
-        #print-area { padding: 40px; background: white; border-radius: 10px; }
-        .worksheet-header { display: none; border-bottom: 2px solid #333; margin-bottom: 20px; padding-bottom: 10px; }
-        .worksheet-header div { display: flex; justify-content: space-between; font-weight: bold; }
-
-        .result-section { margin-top: 30px; border-radius: 20px; padding: 20px; display: none; border: 2px solid #ddd; }
-        .q-card { background: #f9f9f9; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eee; }
-        .opt-btn { display: block; width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #eee; border-radius: 50px; background: white; text-align: left; cursor: pointer; }
+        /* 測驗區 */
+        .q-card { background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .opt-btn { display: block; width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #f0f0f0; border-radius: 50px; background: white; text-align: left; cursor: pointer; transition: 0.2s; }
+        .opt-btn:hover { background: #fdfdfd; border-color: #ccc; }
         .correct { background: var(--secondary) !important; color: white; border-color: var(--secondary); }
-        .wrong { background: var(--error) !important; color: white; border-color: var(--error); }
-        .loading { text-align: center; color: #E67E22; font-weight: bold; display: none; margin: 20px; }
+        .wrong { background: #F44336 !important; color: white; border-color: #F44336; }
 
-        /* 列印時顯示頁眉 */
-        @media print {
-            .worksheet-header { display: block !important; }
-        }
+        /* 分享彈窗 */
+        #shareModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 999; }
+        .modal-content { background: white; padding: 30px; border-radius: 15px; text-align: center; max-width: 400px; width: 90%; }
+        #qrcode { margin: 20px auto; display: flex; justify-content: center; }
+        
+        /* 學生模式樣式調整 */
+        body.student-mode #sidebar { display: none; } /* 學生看不到歷史記錄 */
+        body.student-mode .teacher-only { display: none; } /* 學生看不到輸入框 */
+        body.student-mode .container { max-width: 600px; border: 4px solid #4CAF50; }
+        body.student-mode .btn-share { display: none; }
+        body.student-mode .btn-retry { display: block; } /* 顯示重做按鈕 */
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>🐼 智多星互動學習王 v5</h1>
-    
-    <input type="password" id="apiKey" placeholder="在此輸入 API Key">
-    <textarea id="inputText" placeholder="貼上學習內容..."></textarea>
-
-    <div class="controls">
-        <span>題目數量：</span>
-        <select id="qCount">
-            <option value="3">3 題</option>
-            <option value="5" selected>5 題</option>
-            <option value="10">10 題</option>
-            <option value="全部">盡量出（全部）</option>
-        </select>
-    </div>
-
-    <div class="btn-group">
-        <button class="btn-note action-btn" onclick="handleAction('note')">📝 生成筆記</button>
-        <button class="btn-quiz action-btn" onclick="handleAction('quiz')">❓ 生成題目</button>
-    </div>
-
-    <div id="loading" class="loading">正在準備你的工作紙... ⏳</div>
-
-    <div id="print-area">
-        <div class="worksheet-header" id="wsHeader">
-            <h2 id="wsTitle" style="text-align:center; color: #333;">學習工作紙</h2>
-            <div>
-                <span>姓名：____________________</span>
-                <span>日期：2026年___月___日</span>
-                <span>得分：________</span>
-            </div>
+<aside id="sidebar">
+    <h2>📂 題庫歷史</h2>
+    <div id="historyList">
         </div>
+    <div style="margin-top: auto; font-size: 12px; color: #888; text-align: center;">
+        題目保存在你的電腦中
+    </div>
+</aside>
+
+<main id="main-content">
+    <div class="container">
+        <h1 id="appTitle">🐼 智多星互動學習王</h1>
         
-        <div id="noteArea" class="result-section">
-            <div id="noteContent"></div>
+        <div class="teacher-only">
+            <label>🔑 API Key</label>
+            <input type="password" id="apiKey" placeholder="輸入 API Key">
+            
+            <label>📖 1. 課文原文</label>
+            <textarea id="inputText" style="height: 100px;" placeholder="貼上課文..."></textarea>
+            
+            <label>📝 2. 自定義題目 (可選)</label>
+            <textarea id="customQuizzes" style="height: 80px;" placeholder="1. 問題 答案：xxx..."></textarea>
+            
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <select id="qCount" style="width: 30%;">
+                    <option value="3">3 題</option>
+                    <option value="5" selected>5 題</option>
+                    <option value="10">10 題</option>
+                    <option value="全部">盡量出（全部）</option>
+                </select>
+                <button class="btn-gen" onclick="generateQuiz()" id="genBtn">🚀 生成題目</button>
+            </div>
+            <div id="loading" style="display:none; text-align:center; color:#E67E22; margin-top:10px;">AI 正在出題中... ⏳</div>
         </div>
 
-        <div id="quizArea" class="result-section">
+        <div id="quizArea" style="display:none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin:0; color: #333;">🧠 挑戰小測試</h2>
+                <button class="btn-retry" onclick="renderQuiz(currentQuizData)">🔄 重做一次</button>
+            </div>
             <div id="quizContent"></div>
+            
+            <button class="btn-share" onclick="showShareModal()">🔗 生成學生連結 / QR Code</button>
         </div>
     </div>
+</main>
 
-    <button id="dlBtn" class="action-btn download-btn" onclick="downloadPDF()">📥 下載為 PDF 工作紙</button>
+<div id="shareModal">
+    <div class="modal-content">
+        <h3>📲 分享給學生</h3>
+        <p>學生掃碼或點擊連結即可直接做題！</p>
+        <div id="qrcode"></div>
+        <input type="text" id="shareLink" readonly onclick="this.select()" style="text-align: center; background: #f0f0f0;">
+        <button onclick="document.getElementById('shareModal').style.display='none'" style="background: #ccc; margin-top: 10px; color: #333;">關閉</button>
+    </div>
 </div>
 
 <script>
-let currentType = '';
+let currentQuizData = []; // 存儲當前題目
+let historyData = JSON.parse(localStorage.getItem('quizHistory')) || [];
 
-async function handleAction(type) {
+// 初始化：檢查是否是學生模式 (網址有無 ?data=...)
+window.onload = function() {
+    const params = new URLSearchParams(window.location.search);
+    const compressedData = params.get('data');
+
+    if (compressedData) {
+        // --- 學生模式 ---
+        document.body.classList.add('student-mode');
+        document.getElementById('appTitle').innerText = "📝 同學，請開始挑戰！";
+        try {
+            // 解壓數據
+            const jsonStr = LZString.decompressFromEncodedURIComponent(compressedData);
+            const data = JSON.parse(jsonStr);
+            currentQuizData = data;
+            document.getElementById('quizArea').style.display = 'block';
+            renderQuiz(data);
+        } catch (e) {
+            alert("連結無效或數據損壞！");
+        }
+    } else {
+        // --- 老師模式 ---
+        renderHistory(); // 載入左側歷史
+    }
+};
+
+async function generateQuiz() {
     const key = document.getElementById('apiKey').value.trim();
     const text = document.getElementById('inputText').value.trim();
+    const customText = document.getElementById('customQuizzes').value.trim();
     const count = document.getElementById('qCount').value;
-    const loading = document.getElementById('loading');
-    currentType = type;
-    
-    if(!key || !text) return alert("請輸入 Key 和內容！");
 
-    loading.style.display = 'block';
-    document.getElementById('noteArea').style.display = 'none';
-    document.getElementById('quizArea').style.display = 'none';
-    document.getElementById('dlBtn').style.display = 'none';
-    document.getElementById('wsHeader').style.display = 'none';
+    if (!key) return alert("請輸入 API Key！");
+    if (!text && !customText) return alert("請輸入課文或自定義題目！");
+
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('genBtn').disabled = true;
 
     let prompt = "";
-    if(type === 'note') {
-        prompt = `請根據以下內容生成一份生動、給小學生看的重點筆記，多用 Emoji 分點列出：\n\n"${text}"`;
+    if(customText) {
+        prompt = `參考內容："${text}"\n將以下題目轉為JSON並補齊干擾項，隨機打亂ans位置(0-3)：\n${customText}\n格式：{ "quizzes": [ { "q": "...", "options": ["A","B","C","D"], "ans": 0 } ] }`;
     } else {
-        prompt = `你是一位專業的名校老師。請根據「參考資料」的內容，將「指定題目」格式化為一份標準的選擇題測驗。
-    
-    【參考資料】：
-    "${text}"
-
-    【指定題目】：
-    (這裡請老師直接貼上你的問題和答案)
-
-    【任務要求】：
-    1. 嚴格遵守提供的問題和答案，不要自行創作新問題。
-    2. 每題必須提供 4 個選項。
-    3. 必須「隨機打亂」正確答案的位置，確保正確答案索引 (ans) 均勻分佈在 0, 1, 2, 3 之間。
-    4. 輸出格式必須是純 JSON，不要有任何解釋文字。
-
-    【輸出 JSON 範例】：
-    {
-      "quizzes": [
-        { "q": "問題文字", "options": ["選項1", "選項2", "選項3", "選項4"], "ans": 0 }
-        ⚠️ 重要要求：
-        1. 正確答案索引 'ans' 必須隨機分佈在 0, 1, 2, 3 之間。
-        2. 絕對不能每次都把正確答案放在第 1 個位置 (ans: 0)。
-        3. 請確保正確答案的位置是隨機打亂的。
-        
-        內容："${text}"`;
+        prompt = `根據內容："${text}"\n生成 ${count} 條選擇題。隨機打亂ans位置(0-3)。格式：{ "quizzes": [ { "q": "...", "options": ["A","B","C","D"], "ans": 0 } ] }`;
     }
 
     try {
@@ -143,36 +167,37 @@ async function handleAction(type) {
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
             body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "user", content: prompt }] })
         });
-
+        
         const data = await res.json();
-        const aiMsg = data.choices[0].message.content;
-
-        if(type === 'note') {
-            document.getElementById('wsTitle').innerText = "📚 中華文化 - 溫習筆記";
-            document.getElementById('noteContent').innerHTML = aiMsg.replace(/\n/g, '<br>');
-            document.getElementById('noteArea').style.display = 'block';
-        } else {
-            const jsonMatch = aiMsg.match(/\{[\s\S]*\}/);
-            const quizData = JSON.parse(jsonMatch[0]);
-            renderQuiz(quizData.quizzes);
-            document.getElementById('wsTitle').innerText = "🧠 知識挑戰 - 小測試";
+        const jsonMatch = data.choices[0].message.content.match(/\{[\s\S]*\}/);
+        if(jsonMatch) {
+            const result = JSON.parse(jsonMatch[0]);
+            currentQuizData = result.quizzes;
+            
+            // 1. 顯示題目
             document.getElementById('quizArea').style.display = 'block';
+            renderQuiz(currentQuizData);
+            
+            // 2. 存入歷史
+            saveToHistory(text || customText, currentQuizData);
         }
-        document.getElementById('dlBtn').style.display = 'inline-block';
     } catch (e) {
-        alert("出錯了，請重試！");
+        alert("生成失敗，請重試");
+        console.error(e);
     } finally {
-        loading.style.display = 'none';
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('genBtn').disabled = false;
     }
 }
 
-function renderQuiz(list) {
+function renderQuiz(quizzes) {
     const container = document.getElementById('quizContent');
     container.innerHTML = "";
-    list.forEach((item, qIdx) => {
+    quizzes.forEach((item, qIdx) => {
         const card = document.createElement('div');
         card.className = 'q-card';
         card.innerHTML = `<p><strong>Q${qIdx+1}. ${item.q}</strong></p>`;
+        
         item.options.forEach((opt, oIdx) => {
             const btn = document.createElement('button');
             btn.className = 'opt-btn';
@@ -182,8 +207,10 @@ function renderQuiz(list) {
                 btns.forEach(b => b.style.pointerEvents = 'none');
                 if(oIdx === parseInt(item.ans)) {
                     btn.classList.add('correct');
+                    btn.innerText += " ✅";
                 } else {
                     btn.classList.add('wrong');
+                    btn.innerText += " ❌";
                     btns[parseInt(item.ans)].classList.add('correct');
                 }
             };
@@ -193,28 +220,81 @@ function renderQuiz(list) {
     });
 }
 
-function downloadPDF() {
-    const element = document.getElementById('print-area');
-    const header = document.getElementById('wsHeader');
-    
-    // 下載前暫時顯示頁眉
-    header.style.display = 'block';
-
-    const opt = {
-        margin:       10,
-        filename:     currentType === 'note' ? '學習筆記.pdf' : '小測試.pdf',
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2 },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+// --- 歷史記錄功能 ---
+function saveToHistory(title, quizData) {
+    const shortTitle = title.substring(0, 15) + (title.length>15 ? "..." : "");
+    const newItem = {
+        id: Date.now(),
+        title: shortTitle,
+        date: new Date().toLocaleDateString(),
+        data: quizData
     };
+    historyData.unshift(newItem); // 加到最前面
+    localStorage.setItem('quizHistory', JSON.stringify(historyData));
+    renderHistory();
+}
 
-    // 執行下載
-    html2pdf().set(opt).from(element).save().then(() => {
-        // 下載完後恢復原狀（如果是互動模式，可以隱藏頁眉）
-        // header.style.display = 'none'; 
+function renderHistory() {
+    const list = document.getElementById('historyList');
+    list.innerHTML = "";
+    historyData.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.innerHTML = `
+            <div>${item.title}</div>
+            <div style="font-size:12px; color:#aaa;">${item.date}</div>
+            <span class="del-btn" onclick="deleteHistory(event, ${index})">×</span>
+        `;
+        div.onclick = (e) => {
+            if(e.target.className !== 'del-btn') {
+                currentQuizData = item.data;
+                document.getElementById('quizArea').style.display = 'block';
+                renderQuiz(item.data);
+                // 標記選中
+                document.querySelectorAll('.history-item').forEach(i=>i.classList.remove('active'));
+                div.classList.add('active');
+            }
+        };
+        list.appendChild(div);
     });
 }
-</script>
 
+function deleteHistory(e, index) {
+    e.stopPropagation();
+    if(confirm("確定刪除這個記錄嗎？")) {
+        historyData.splice(index, 1);
+        localStorage.setItem('quizHistory', JSON.stringify(historyData));
+        renderHistory();
+    }
+}
+
+// --- 分享功能 ---
+function showShareModal() {
+    if(!currentQuizData || currentQuizData.length === 0) return alert("沒有題目可以分享！");
+
+    // 1. 壓縮數據
+    const jsonStr = JSON.stringify(currentQuizData);
+    const compressed = LZString.compressToEncodedURIComponent(jsonStr);
+    
+    // 2. 生成連結 (當前網址 + ?data=...)
+    // 注意：如果是 Vercel，它會自動變成你的 Vercel 網址
+    const baseUrl = window.location.href.split('?')[0];
+    const fullLink = `${baseUrl}?data=${compressed}`;
+    
+    // 3. 顯示 Link
+    const linkInput = document.getElementById('shareLink');
+    linkInput.value = fullLink;
+    
+    // 4. 生成 QR Code
+    document.getElementById('qrcode').innerHTML = "";
+    new QRCode(document.getElementById("qrcode"), {
+        text: fullLink,
+        width: 150,
+        height: 150
+    });
+    
+    document.getElementById('shareModal').style.display = 'flex';
+}
+</script>
 </body>
 </html>
