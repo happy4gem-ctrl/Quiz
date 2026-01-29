@@ -151,11 +151,6 @@ async function handleAction(type) {
     const loading = document.getElementById('loading');
     loading.style.display = 'block';
 
-    document.getElementById('noteArea').style.display = 'none';
-    document.getElementById('quizArea').style.display = 'none';
-    document.getElementById('dlBtn').style.display = 'none';
-    document.getElementById('wsHeader').style.display = 'none';
-
     
     let prompt = "";
     if(type === 'note') {
