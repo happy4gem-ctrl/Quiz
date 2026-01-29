@@ -39,46 +39,7 @@
         /* 列印時顯示頁眉 */
         @media print {
             .worksheet-header { display: block !important; }
-
-        /* 確保下載區域背景與寬度 */
-        #print-area { 
-            background: white; 
-            width: 100%; 
         }
-
-        /* 只有在裡面沒有內容時才隱藏，這能防止 html2pdf 抓不到高度 */
-        #noteArea:empty, #quizArea:empty { 
-            display: none; 
-        }
-
-        /* 在屏幕顯示時確保文字顏色足夠深 */
-        @media screen { 
-            #print-area { color: #333; }
-        }
-        /* ------------------------------------------- */
-
-            @media print {
-    /* 把所有不需要印出來的雜物通通隱藏 */
-    nav, .btn-group, #apiKey, #inputText, .controls, #dlBtn, .loading, h1, label {
-        display: none !important;
-    }
-    /* 讓列印區域變回最簡單的白底黑字 */
-    body, .container {
-        background: white !important;
-        border: none !important;
-        box-shadow: none !important;
-        width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    #print-area {
-        display: block !important;
-    }
-}
-
-    </style>
-</head>
-        
     </style>
 </head>
 <body>
@@ -87,19 +48,15 @@
     <h1>🐼 智多星互動學習王 v5</h1>
     
     <input type="password" id="apiKey" placeholder="在此輸入 API Key">
-   <label>📖 1. 貼上課文原文</label>
-<textarea id="inputText" placeholder="在這裡貼上文章內容..."></textarea>
+    <textarea id="inputText" placeholder="貼上學習內容..."></textarea>
 
-<label>📝 2. 自定義題目 (可選)</label>
-<textarea id="customQuizzes" placeholder="例如：1. 1+1？ 答案：2"></textarea>
-    
     <div class="controls">
         <span>題目數量：</span>
         <select id="qCount">
             <option value="3">3 題</option>
             <option value="5" selected>5 題</option>
             <option value="10">10 題</option>
-             <option value="全部">盡量多出 (全部)</option>
+            <option value="全部">盡量出（全部）</option>
         </select>
     </div>
 
@@ -129,56 +86,52 @@
         </div>
     </div>
 
-    <button id="dlBtn" class="action-btn download-btn" onclick="window.print()">📥 打印 / 儲存 PDF</button>
+    <button id="dlBtn" class="action-btn download-btn" onclick="downloadPDF()">📥 下載為 PDF 工作紙</button>
 </div>
 
 <script>
 let currentType = '';
 
 async function handleAction(type) {
-    // 1. 抓取所有輸入框的內容
     const key = document.getElementById('apiKey').value.trim();
     const text = document.getElementById('inputText').value.trim();
     const count = document.getElementById('qCount').value;
     const loading = document.getElementById('loading');
     currentType = type;
-    // 這裡要確保你的 HTML 裡有 id="" 的 textarea
-    const customInput = document.getElementById('customQuizzes');
-    const customText = customInput ? customInput.value.trim() : "";
     
-   if (!key) return alert("請輸入 API Key！");
-if (!text && !customText) return alert("請至少在『課文原文』或『自定義題目』其中一處輸入內容！");
+    if(!key || !text) return alert("請輸入 Key 和內容！");
 
-    const loading = document.getElementById('loading');
     loading.style.display = 'block';
+    document.getElementById('noteArea').style.display = 'none';
+    document.getElementById('quizArea').style.display = 'none';
+    document.getElementById('dlBtn').style.display = 'none';
+    document.getElementById('wsHeader').style.display = 'none';
 
-    
     let prompt = "";
     if(type === 'note') {
-        prompt = `你是一位名校老師。請根據以下內容生成一份給小學生的重點筆記：\n\n"${text}"`;
+        prompt = `請根據以下內容生成一份生動、給小學生看的重點筆記，多用 Emoji 分點列出：\n\n"${text}"`;
     } else {
-       
-        if(customText !== "") {
-            prompt = `
-            你是一位專業的名校老師。請根據「參考資料」的內容，將「指定題目」格式化為一份標準的選擇題測驗，程度高級艱深。
-            請根據參考資料："${text}"
-            
-            任務：將以下老師指定的題目轉化為 JSON 格式。
-            
-            指定題目：
-            ${}
-            
-            要求：
-            1. 必須嚴格遵守老師的問題和正確答案。
-            2. 為每題補齊另外 3 個干擾選項，總共 4 個選項。
-            3. 隨機打亂正確答案的位置 (ans)。
-            4. 輸出格式必須是純 JSON： { "quizzes": [ { "q": "問題", "options": ["A", "B", "C", "D"], "ans": 0 } ] }
-            `;
-        } else {
-            prompt = `請根據參考資料："${text}"，自動生成 ${count} 條選擇題，並隨機打亂正確答案位置。格式同上。`;
-        }
-        // ------------------------------------
+        prompt = `你是一位專業的名校老師。請根據「參考資料」的內容，將「指定題目」格式化為一份標準的選擇題測驗。
+    
+    【參考資料】：
+    "${text}"
+
+    【指定題目】：
+    (這裡請老師直接貼上你的問題和答案)
+
+    【任務要求】：
+    1. 嚴格遵守提供的問題和答案，不要自行創作新問題。
+    2. 每題必須提供 4 個選項。
+    3. 必須「隨機打亂」正確答案的位置，確保正確答案索引 (ans) 均勻分佈在 0, 1, 2, 3 之間。
+    4. 輸出格式必須是純 JSON，不要有任何解釋文字。
+
+    【輸出 JSON 範例】：
+    {
+      "quizzes": [
+        { "q": "問題文字", "options": ["選項1", "選項2", "選項3", "選項4"], "ans": 0 }
+        注意：ans 是正確答案的索引（0 是第一個）。\n內容："${text}"`;
     }
+
     try {
         const res = await fetch('https://api.chatanywhere.tech/v1/chat/completions', {
             method: 'POST',
@@ -254,8 +207,6 @@ function downloadPDF() {
     html2pdf().set(opt).from(element).save().then(() => {
         // 下載完後恢復原狀（如果是互動模式，可以隱藏頁眉）
         // header.style.display = 'none'; 
-
-        
     });
 }
 </script>
