@@ -87,8 +87,8 @@
     <h1>🐼 智多星互動學習王 v5</h1>
     
     <input type="password" id="apiKey" placeholder="在此輸入 API Key">
-    <textarea id="inputText" placeholder="貼上學習內容..."></textarea>
-
+    <label>📝 題目清單 (如有，每行一題，例如：1. 問題 答案：xxx)</label>
+<textarea id="customQuizzes" placeholder="如果不填，AI 會自動根據課文出題..."></textarea>
     <div class="controls">
         <span>題目數量：</span>
         <select id="qCount">
@@ -150,8 +150,30 @@ async function handleAction(type) {
     if(type === 'note') {
         prompt = `請根據以下內容生成一份條理分明、給小學生看的重點筆記，多用 Emoji 分點列出：\n\n"${text}"`;
     } else {
-        prompt = `請根據內容生成 ${count} 條選擇題，題目高級艱深。正確答案 'ans' 需隨機分佈。JSON格式：\n{ "quizzes": [ { "q": "問題", "options": ["A", "B", "C", "D"], "ans": 0 } ] }\n\n內容："${text}"`;
+       if(type === 'quiz') {
+    prompt = `
+    你是一位專業的名校老師。請根據「參考資料」的內容，將「指定題目」格式化為一份標準的選擇題測驗。
+    
+    【參考資料】：
+    "${text}"
+
+    【指定題目】：
+    (這裡請老師直接貼上你的問題和答案)
+
+    【任務要求】：
+    1. 嚴格遵守提供的問題和答案，不要自行創作新問題。
+    2. 每題必須提供 4 個選項。
+    3. 必須「隨機打亂」正確答案的位置，確保正確答案索引 (ans) 均勻分佈在 0, 1, 2, 3 之間。
+    4. 輸出格式必須是純 JSON，不要有任何解釋文字。
+
+    【輸出 JSON 範例】：
+    {
+      "quizzes": [
+        { "q": "問題文字", "options": ["選項1", "選項2", "選項3", "選項4"], "ans": 0 }
+      ]
     }
+    `;
+}
 
     try {
         const res = await fetch('https://api.chatanywhere.tech/v1/chat/completions', {
@@ -159,7 +181,13 @@ async function handleAction(type) {
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
             body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "user", content: prompt }] })
         });
+const customQuizzes = document.getElementById('customQuizzes').value.trim();
 
+if(customQuizzes) {
+    prompt = `請根據參考資料："${text}"，將以下老師指定的題目轉化為 JSON 格式並隨機打亂選項：\n${customQuizzes}`;
+} else {
+    prompt = `請根據參考資料："${text}"，自動生成 ${count} 條選擇題...`;
+}
         const data = await res.json();
         const aiMsg = data.choices[0].message.content;
 
