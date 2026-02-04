@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智多星互動學習王 v7 (修復版)</title>
+    <title>小學互動學習王 v7 (修復版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
@@ -84,6 +84,7 @@
                     <option value="3">3 題</option>
                     <option value="5" selected>5 題</option>
                     <option value="10">10 題</option>
+                    <option value="20">20 題</option>
                     <option value="全部">盡量出（全部）</option>
                 </select>
                 <button class="btn-gen" onclick="generateQuiz()" id="genBtn">🚀 生成題目</button>
@@ -173,9 +174,15 @@ async function generateQuiz() {
     const baseReq = `回傳純JSON格式: { "quizzes": [ { "q": "題目", "options": ["A","B","C","D"], "ans": 0 } ] }。注意：ans必須是0-3的數字。`;
     
     if(customText) {
-        prompt = `參考內容："${text}"。請將以下題目轉為JSON並補齊選項，隨機打亂ans位置：\n${customText}\n${baseReq}`;
+        prompt = `參考內容："${text}"。請將以下題目轉為JSON並補齊選項，要求：
+            1. 必須嚴格遵守老師的問題和正確答案。
+            2. 為每題補齊另外 3 個干擾選項，總共 4 個選項。
+            3. 隨機打亂正確答案的位置 (ans)。隨機打亂ans位置：\n${customText}\n${baseReq}`;
     } else {
-        prompt = `根據內容："${text}"。生成 ${count} 條選擇題，隨機打亂ans位置。\n${baseReq}`;
+        prompt = `根據內容："${text}"。生成 ${count} 要求：
+            1. 必須嚴格遵守老師的問題和正確答案。
+            2. 為每題補齊另外 3 個干擾選項，總共 4 個選項。
+            3. 隨機打亂正確答案的位置 (ans)。。\n${baseReq}`;
     }
 
     try {
