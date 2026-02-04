@@ -177,12 +177,12 @@ async function generateQuiz() {
         prompt = `參考內容："${text}"。請將以下題目轉為JSON並補齊選項，要求：
             1. 必須嚴格遵守老師的問題和正確答案。
             2. 為每題補齊另外 3 個干擾選項，總共 4 個選項。
-            3. 4個選項各有25%正確答案的位置 (ans)。隨機打亂ans位置：\n${customText}\n${baseReq}`;
+            3. 4個答案選項各有25%正確答案的位置 (ans)。隨機打亂ans位置：\n${customText}\n${baseReq}`;
     } else {
         prompt = `根據內容："${text}"。生成 ${count} 要求：
             1. 必須嚴格遵守老師的問題和正確答案。
             2. 為每題補齊另外 3 個干擾選項，總共 4 個選項。
-            3. 4個選項各有25%正確答案的位置 (ans)。。\n${baseReq}`;
+            3. 4個答案選項各有25%正確答案的位置 (ans)。。\n${baseReq}`;
     }
 
     try {
