@@ -85,7 +85,7 @@
                     <option value="5" selected>5 題</option>
                     <option value="10">10 題</option>
                     <option value="20">20 題</option>
-                    <option value="全部">盡量出（全部）</option>
+                    <option value="all">盡量出（全部）</option>
                 </select>
                 <button class="btn-gen" onclick="generateQuiz()" id="genBtn">🚀 生成題目</button>
             </div>
@@ -176,12 +176,12 @@ async function generateQuiz() {
     if(customText) {
         prompt = `參考內容："${text}"。請將以下題目轉為JSON並補齊選項，要求：
             1. 必須嚴格遵守老師的問題和正確答案。
-            2. 為每題補齊另外 3 個干擾選項，總共 4 個選項，每個選項有25%為正確答案。
+            2. 為每題補齊另外 3 個干擾選項，總共 4 個選項，嚴格遵守不要把正確答案只放在A第一位置，不要自行創作題目和答案 。
             3. 正確答案隨機位置  (ans)。隨機打亂ans位置：\n${customText}\n${baseReq}`;
     } else {
         prompt = `根據內容："${text}"。生成 ${count} 要求：
             1. 必須嚴格遵守老師的問題和正確答案。
-            2. 為每題補齊另外 3 個干擾選項，總共 4 個選項，每個選項有25%為正確答案。
+            2. 為每題補齊另外 3 個干擾選項，總共 4 個選項，嚴格遵守不要把正確答案只放在A第一位置，不要自行創作題目和答案 。
             3. 正確答案隨機位置 (ans)。。\n${baseReq}`;
     }
 
