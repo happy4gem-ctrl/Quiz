@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quiz 2Easy V2 - 智能試卷生成器</title>
+    <title>Quiz 2Easy V2 - 智能試卷生成器 (多API相容版)</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -97,18 +97,18 @@
                     <i class="fa-solid fa-graduation-cap text-xl"></i>
                 </div>
                 <div>
-                    <span class="text-xs font-semibold uppercase tracking-wider text-brand-500">Upgrade Edition</span>
+                    <span class="text-xs font-semibold uppercase tracking-wider text-brand-500">Upgrade Edition V2.2</span>
                     <h1 class="text-xl font-bold text-slate-900 flex items-center gap-2">
-                        Quiz 2Easy V2 <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full border border-slate-200">智能考卷生成系統</span>
+                        Quiz 2Easy V2 <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full border border-slate-200">全能 API 試卷生成系統</span>
                     </h1>
                 </div>
             </div>
             
             <div class="flex items-center gap-3 flex-wrap">
-                <!-- Real API Key Settings Indicator -->
+                <!-- Multi-API Status Settings Indicator -->
                 <button onclick="openApiModal()" id="api-status-btn" class="flex items-center gap-2 text-sm bg-slate-50 hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-xl border border-slate-200 transition">
                     <span id="api-dot" class="h-2 w-2 rounded-full bg-amber-500"></span>
-                    <span id="api-text" class="font-medium">模擬生成模式 (未輸入 API Key)</span>
+                    <span id="api-text" class="font-medium">本地模擬模式 (未連接外部 API)</span>
                     <i class="fa-solid fa-gear text-xs"></i>
                 </button>
                 <button onclick="window.print()" class="bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 transition flex items-center gap-2">
@@ -180,7 +180,7 @@
                         <!-- Simulated Parsing Status -->
                         <div id="parse-loader" class="hidden space-y-2">
                             <div class="flex items-center justify-between text-xs">
-                                <span class="font-medium text-brand-600 animate-pulse"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>AI 正在光學識別 (OCR) 及分析考試範圍...</span>
+                                <span class="font-medium text-brand-600 animate-pulse"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>AI 正在分析考試範圍文件並提取考點...</span>
                                 <span id="parse-percent" class="font-bold text-slate-700">0%</span>
                             </div>
                             <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
@@ -303,7 +303,7 @@
                     </div>
 
                     <button onclick="generatePaper()" id="generate-btn" class="w-full bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-brand-500/10 hover:shadow-brand-500/25 transition duration-150 flex items-center justify-center gap-2 text-base">
-                        <i class="fa-solid fa-wand-magic-sparkles animate-spin-slow"></i> 🧙‍♂️ 根據範圍一鍵生成考卷
+                        <i class="fa-solid fa-wand-magic-sparkles animate-spin-slow"></i> 🧙‍♂️ 一鍵智能生成考卷
                     </button>
                 </div>
             </div>
@@ -390,31 +390,55 @@
 
     <!-- Modal: API Settings dialog -->
     <div id="api-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 hidden no-print">
-        <div class="bg-white rounded-3xl border border-slate-200 w-full max-w-md p-6 m-4 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+        <div class="bg-white rounded-3xl border border-slate-200 w-full max-w-lg p-6 m-4 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
             <button onclick="closeApiModal()" class="absolute top-4 right-4 h-8 w-8 rounded-full hover:bg-slate-100 text-slate-400 flex items-center justify-center transition"><i class="fa-solid fa-xmark"></i></button>
             <div class="flex items-center gap-3 mb-4">
-                <div class="h-10 w-10 bg-indigo-50 text-brand-600 rounded-xl flex items-center justify-center"><i class="fa-solid fa-key text-lg"></i></div>
+                <div class="h-10 w-10 bg-indigo-50 text-brand-600 rounded-xl flex items-center justify-center"><i class="fa-solid fa-gears text-lg"></i></div>
                 <div>
-                    <h3 class="font-bold text-slate-900 text-lg">設定 Gemini API 金鑰</h3>
-                    <p class="text-xs text-slate-500">串接您自己的 API Key 解鎖真實文件理解與題目生成</p>
+                    <h3 class="font-bold text-slate-900 text-lg">設定 AI 引擎供應商</h3>
+                    <p class="text-xs text-slate-500">自由切換 DeepSeek / OpenAI / Gemini / Ollama</p>
                 </div>
             </div>
             
             <div class="space-y-4">
+                <!-- Provider Selector -->
                 <div>
-                    <label class="block text-xs font-semibold text-slate-500 mb-1.5">Gemini API Key</label>
-                    <input id="api-key-input" type="password" placeholder="請貼上 AIzaSy..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-500 transition">
+                    <label class="block text-xs font-semibold text-slate-500 mb-1.5">選擇 AI 供應商</label>
+                    <select id="api-provider" onchange="onProviderChange()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-500 transition font-medium">
+                        <option value="none">模擬本地生成模式 (不需要 API Key)</option>
+                        <option value="deepseek">DeepSeek (極佳性價比、中文首選)</option>
+                        <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
+                        <option value="gemini">Google Gemini (高效穩定)</option>
+                        <option value="ollama">Ollama / 自訂本地 API (完全免費、高隱私)</option>
+                    </select>
+                </div>
+
+                <!-- Dynamic inputs based on choice -->
+                <div id="api-key-container" class="space-y-4">
+                    <div>
+                        <label id="api-key-label" class="block text-xs font-semibold text-slate-500 mb-1.5">API 金鑰 (API Key)</label>
+                        <input id="api-key-input" type="password" placeholder="請貼上您的 API Key" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-500 transition">
+                    </div>
+
+                    <div id="custom-endpoint-box" class="hidden">
+                        <label class="block text-xs font-semibold text-slate-500 mb-1.5">自訂端點 (Base URL)</label>
+                        <input id="api-endpoint" type="text" placeholder="例如: http://localhost:11434/v1" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-500 transition">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1.5">指定模型名稱 (Model Name)</label>
+                        <input id="api-model" type="text" placeholder="預設自動辨別" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-500 transition">
+                    </div>
                 </div>
                 
                 <div class="bg-indigo-50/50 rounded-2xl p-4 border border-indigo-50 text-xs text-slate-600 leading-relaxed space-y-1.5">
                     <p class="font-semibold text-brand-700 flex items-center gap-1"><i class="fa-solid fa-shield-halved"></i> 隱私保護保證：</p>
-                    <p>1. 本網頁直接與 Google Gemini 伺服器通訊，您的 API Key 將會**安全地儲存於您的瀏覽器本地 (localStorage)**。</p>
-                    <p>2. 沒有任何遠端後端會收集您的密鑰，請放心使用。</p>
+                    <p>您的所有 API Key 與設定皆安全地儲存於您的**瀏覽器本地快取 (localStorage)**。網頁直接與 AI 官方伺服器通訊，無任何第三方後端會側錄或收集您的金鑰，安全無虞。</p>
                 </div>
                 
                 <div class="flex gap-2">
-                    <button onclick="saveApiKey()" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-brand-500/10 hover:shadow-brand-500/25 transition">儲存金鑰</button>
-                    <button onclick="clearApiKey()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold px-4 rounded-xl transition">清除</button>
+                    <button onclick="saveApiKey()" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-brand-500/10 hover:shadow-brand-500/25 transition">儲存並應用</button>
+                    <button onclick="clearApiKey()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold px-4 rounded-xl transition font-medium">清除</button>
                 </div>
             </div>
         </div>
@@ -442,7 +466,7 @@
 3. 基礎環保觀念（減少碳排放、資源分類回收）。`
         };
 
-        // Static fallback generator in case API key is not connected
+        // Static fallback generator database
         const prebakedQuestions = {
             '中文': {
                 'mc': [
@@ -450,8 +474,8 @@
                     { q: "下列哪一個詞語的讀音與「盤旋」的「旋」相同？", options: ["A. 旋風", "B. 凱旋", "C. 宣傳", "D. 船隻"], ans: "B. 凱旋", explanation: "盤旋與凱旋的「旋」均讀作 xuán。" }
                 ],
                 'blank': [
-                    { q: "春天來了，陽光灑在微風中，顯得格外的 (和煦 / 斑駁)。", ans: "和煦", explanation: "和煦常用於形容春天的陽光溫暖舒適。" },
-                    { q: "老鷹在天空中 (盤旋 / 呼喚) 了很久，似乎正在尋找獵物。", ans: "盤旋", explanation: "盤旋指環繞飛行的動作，最符合老鷹在空中的動態形容。" }
+                    { q: "春天來了，陽光灑在微風中，顯得格外的 ______ (和煦 / 斑駁)。", ans: "和煦", explanation: "和煦常用於形容春天的陽光溫暖舒適。" },
+                    { q: "老鷹在天空中 ______ (盤旋 / 呼喚) 了很久，似乎正在尋找獵物。", ans: "盤旋", explanation: "盤旋指環繞飛行的動作，最符合老鷹在空中的動態形容。" }
                 ],
                 'tf': [
                     { q: "《大自然的話》課文中提到，大自然是不會說話的，一切只是人們的幻想。", ans: "F", explanation: "課文是指大自然通過各種自然現象（如雁南飛、落葉）向我們「說話」，需要用心觀察。" },
@@ -497,7 +521,7 @@
             },
             '常識': {
                 'mc': [
-                    { q: "植物主要是透過哪一個構造來吸收泥土中的水分和礦物質？", options: ["A. 葉片", "B. 根部", "C. 莖部", "D. 花朵"], ans: "B. 根部", explanation: "根部具有固著植物與吸收土壤水分與養分的功能。" },
+                    { q: "植物主要是透過哪一個構造來吸收泥土中的水分 and 礦物質？", options: ["A. 葉片", "B. 根部", "C. 莖部", "D. 花朵"], ans: "B. 根部", explanation: "根部具有固著植物與吸收土壤水分與養分的功能。" },
                     { q: "當水吸收熱量，從液態轉變為氣態的過程稱之為甚麼？", options: ["A. 凝結", "B. 蒸發", "C. 融化", "D. 昇華"], ans: "B. 蒸發", explanation: "水受熱氣化為水蒸氣的過程稱為蒸發或汽化。" }
                 ],
                 'blank': [
@@ -516,7 +540,7 @@
 
         // App Initial State
         document.addEventListener('DOMContentLoaded', () => {
-            loadApiKey();
+            loadApiConfig();
             suggestScope();
             switchViewTab('questions');
         });
@@ -660,7 +684,6 @@
             document.getElementById('parse-bar').style.width = '0%';
         }
 
-        // API settings operations
         function openApiModal() {
             document.getElementById('api-modal').classList.remove('hidden');
         }
@@ -669,47 +692,110 @@
             document.getElementById('api-modal').classList.add('hidden');
         }
 
-        function saveApiKey() {
-            const key = document.getElementById('api-key-input').value.trim();
-            if (key) {
-                localStorage.setItem('gemini_api_key', key);
-                updateApiStatusUI(true);
-                closeApiModal();
+        function onProviderChange() {
+            const provider = document.getElementById('api-provider').value;
+            const keyLabel = document.getElementById('api-key-label');
+            const keyInput = document.getElementById('api-key-input');
+            const customBox = document.getElementById('custom-endpoint-box');
+            const modelInput = document.getElementById('api-model');
+
+            if (provider === 'none') {
+                document.getElementById('api-key-container').classList.add('hidden');
             } else {
-                alert('請輸入有效的 API Key');
+                document.getElementById('api-key-container').classList.remove('hidden');
+            }
+
+            // Adjust placeholders based on selection
+            if (provider === 'deepseek') {
+                keyLabel.innerText = "DeepSeek API Key";
+                keyInput.placeholder = "請貼上 sk-...";
+                customBox.classList.add('hidden');
+                modelInput.placeholder = "deepseek-chat";
+            } else if (provider === 'openai') {
+                keyLabel.innerText = "OpenAI API Key";
+                keyInput.placeholder = "請貼上 sk-proj-...";
+                customBox.classList.add('hidden');
+                modelInput.placeholder = "gpt-4o-mini";
+            } else if (provider === 'gemini') {
+                keyLabel.innerText = "Gemini API Key";
+                keyInput.placeholder = "請貼上 AIzaSy...";
+                customBox.classList.add('hidden');
+                modelInput.placeholder = "gemini-2.5-flash";
+            } else if (provider === 'ollama') {
+                keyLabel.innerText = "自訂 API Key (選填)";
+                keyInput.placeholder = "Ollama 本地不需輸入，自訂雲端需輸入";
+                customBox.classList.remove('hidden');
+                document.getElementById('api-endpoint').value = "http://localhost:11434/v1";
+                modelInput.placeholder = "llama3 (依您本地模型為準)";
             }
         }
 
-        function clearApiKey() {
-            localStorage.removeItem('gemini_api_key');
-            document.getElementById('api-key-input').value = '';
-            updateApiStatusUI(false);
+        function saveApiKey() {
+            const provider = document.getElementById('api-provider').value;
+            const apiKey = document.getElementById('api-key-input').value.trim();
+            const endpoint = document.getElementById('api-endpoint').value.trim();
+            const modelName = document.getElementById('api-model').value.trim();
+
+            const config = {
+                provider: provider,
+                apiKey: apiKey,
+                endpoint: endpoint,
+                model: modelName
+            };
+
+            localStorage.setItem('quiz2easy_api_config', JSON.stringify(config));
+            updateApiStatusUI(config);
             closeApiModal();
         }
 
-        function loadApiKey() {
-            const key = localStorage.getItem('gemini_api_key');
-            if (key) {
-                document.getElementById('api-key-input').value = key;
-                updateApiStatusUI(true);
+        function clearApiKey() {
+            localStorage.removeItem('quiz2easy_api_config');
+            document.getElementById('api-provider').value = 'none';
+            document.getElementById('api-key-input').value = '';
+            document.getElementById('api-endpoint').value = '';
+            document.getElementById('api-model').value = '';
+            onProviderChange();
+            updateApiStatusUI({ provider: 'none' });
+            closeApiModal();
+        }
+
+        function loadApiConfig() {
+            const raw = localStorage.getItem('quiz2easy_api_config');
+            if (raw) {
+                try {
+                    const config = JSON.parse(raw);
+                    document.getElementById('api-provider').value = config.provider || 'none';
+                    document.getElementById('api-key-input').value = config.apiKey || '';
+                    document.getElementById('api-endpoint').value = config.endpoint || '';
+                    document.getElementById('api-model').value = config.model || '';
+                    
+                    onProviderChange();
+                    updateApiStatusUI(config);
+                } catch(e) {
+                    updateApiStatusUI({ provider: 'none' });
+                }
             } else {
-                updateApiStatusUI(false);
+                updateApiStatusUI({ provider: 'none' });
             }
         }
 
-        function updateApiStatusUI(isActive) {
+        function updateApiStatusUI(config) {
             const dot = document.getElementById('api-dot');
             const text = document.getElementById('api-text');
             const btn = document.getElementById('api-status-btn');
 
-            if (isActive) {
-                dot.className = "h-2 w-2 rounded-full bg-emerald-500 animate-pulse";
-                text.innerText = "智能 API 模式已啟動";
-                btn.className = "flex items-center gap-2 text-sm bg-emerald-50 text-emerald-700 px-4 py-2 rounded-xl border border-emerald-200 transition";
-            } else {
+            if (!config || config.provider === 'none') {
                 dot.className = "h-2 w-2 rounded-full bg-amber-500";
-                text.innerText = "模擬生成模式 (未輸入 API Key)";
+                text.innerText = "本地模擬模式 (不需 API Key)";
                 btn.className = "flex items-center gap-2 text-sm bg-slate-50 hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-xl border border-slate-200 transition";
+            } else {
+                dot.className = "h-2 w-2 rounded-full bg-emerald-500 animate-pulse";
+                let providerName = config.provider.toUpperCase();
+                if (config.provider === 'deepseek') providerName = "DeepSeek";
+                if (config.provider === 'ollama') providerName = "本地 Ollama";
+                
+                text.innerText = `${providerName} 智能生成模式`;
+                btn.className = "flex items-center gap-2 text-sm bg-emerald-50 text-emerald-700 px-4 py-2 rounded-xl border border-emerald-200 transition";
             }
         }
 
@@ -735,10 +821,14 @@
             genBtn.disabled = true;
             genBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> AI 正在構建完美試卷，請稍候...`;
 
-            // Active API Key Checking
-            const apiKey = localStorage.getItem('gemini_api_key');
+            // Active API Config Checking
+            const rawConfig = localStorage.getItem('quiz2easy_api_config');
+            let config = null;
+            if (rawConfig) {
+                try { config = JSON.parse(rawConfig); } catch(e) {}
+            }
             
-            if (apiKey) {
+            if (config && config.provider !== 'none') {
                 try {
                     // Assemble Question Type Config to pass to Prompt
                     const typesWanted = [];
@@ -774,37 +864,110 @@ Please return EXACTLY a JSON object with this key structure:
 }
 Make sure all content is perfectly in traditional Chinese (except English subject questions, which must be in English with Traditional Chinese headers and explanations where appropriate). Do not include any markdown wrap or codeblock markers like \`\`\`json, just the pure json object string.`;
 
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: structuredPrompt }] }],
-                            generationConfig: { responseMimeType: "application/json" }
-                        })
-                    });
+                    let parsedPaper = null;
 
-                    if (!response.ok) throw new Error('API 響應出錯，請確認 Key 的有效性或配額。');
+                    if (config.provider === 'gemini') {
+                        // Google Gemini Protocol
+                        const activeModel = config.model || "gemini-2.5-flash";
+                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${config.apiKey}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                contents: [{ parts: [{ text: structuredPrompt }] }],
+                                generationConfig: { responseMimeType: "application/json" }
+                            })
+                        });
+
+                        if (!response.ok) throw new Error('Gemini API 響應錯誤。');
+                        const resData = await response.json();
+                        const rawJson = resData.candidates[0].content.parts[0].text;
+                        parsedPaper = JSON.parse(cleanJsonString(rawJson));
+
+                    } else {
+                        // OpenAI Compatible Protocol (DeepSeek, OpenAI, Ollama)
+                        let apiUrl = "";
+                        let modelName = "";
+
+                        if (config.provider === 'openai') {
+                            apiUrl = "https://api.openai.com/v1/chat/completions";
+                            modelName = config.model || "gpt-4o-mini";
+                        } else if (config.provider === 'deepseek') {
+                            apiUrl = "https://api.deepseek.com/v1/chat/completions";
+                            modelName = config.model || "deepseek-chat";
+                        } else if (config.provider === 'ollama') {
+                            apiUrl = config.endpoint || "http://localhost:11434/v1/chat/completions";
+                            // For Ollama completions, the endpoint needs to end properly
+                            if (!apiUrl.endsWith('/chat/completions') && !apiUrl.endsWith('/chat/completions/')) {
+                                apiUrl = apiUrl.replace(/\/+$/, '') + '/chat/completions';
+                            }
+                            modelName = config.model || "llama3";
+                        }
+
+                        const headers = {
+                            'Content-Type': 'application/json'
+                        };
+                        if (config.apiKey) {
+                            headers['Authorization'] = `Bearer ${config.apiKey}`;
+                        }
+
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify({
+                                model: modelName,
+                                messages: [
+                                    { role: "system", content: "You are a helpful assistant that only returns raw JSON objects without codeblocks. No conversational introduction." },
+                                    { role: "user", content: structuredPrompt }
+                                ],
+                                response_format: { type: "json_object" },
+                                temperature: 0.3
+                            })
+                        });
+
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(`API 請求出錯 (${response.status}): ${errorText}`);
+                        }
+                        
+                        const resData = await response.json();
+                        const rawJson = resData.choices[0].message.content;
+                        parsedPaper = JSON.parse(cleanJsonString(rawJson));
+                    }
                     
-                    const resData = await response.json();
-                    const rawJson = resData.candidates[0].content.parts[0].text;
-                    const parsedPaper = JSON.parse(rawJson);
-                    
-                    renderQuestionsToCanvas(parsedPaper);
-                    switchViewTab('questions');
+                    if (parsedPaper) {
+                        renderQuestionsToCanvas(parsedPaper);
+                        switchViewTab('questions');
+                    } else {
+                        throw new Error("無法解析 AI 回傳的 JSON 結構。");
+                    }
 
                 } catch (err) {
-                    alert('Gemini API 生成失敗：' + err.message + '\n系統將為您自動切換至智能模擬模式生成試卷。');
+                    alert('API 生成失敗：' + err.message + '\n系統將自動切換至「模擬模式」以展示生成效果。');
                     fallbackToMockGeneration(subject);
                 }
             } else {
                 // Mock generator execution
                 setTimeout(() => {
                     fallbackToMockGeneration(subject);
-                }, 1000);
+                }, 800);
             }
 
             genBtn.disabled = false;
             genBtn.innerHTML = originalHTML;
+        }
+
+        // Helper to strip markdown JSON wrapping if model adds it
+        function cleanJsonString(str) {
+            let cleaned = str.trim();
+            if (cleaned.startsWith('```json')) {
+                cleaned = cleaned.substring(7);
+            } else if (cleaned.startsWith('```')) {
+                cleaned = cleaned.substring(3);
+            }
+            if (cleaned.endsWith('```')) {
+                cleaned = cleaned.substring(0, cleaned.length - 3);
+            }
+            return cleaned.trim();
         }
 
         // Mock processor based on selected subject keywords
