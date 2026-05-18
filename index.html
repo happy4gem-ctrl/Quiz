@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小學生學習助手 🚀</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #F3F4F6; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; }
+        .logo { font-size: 3rem; margin-bottom: 10px; }
+        h1 { color: #333; margin-bottom: 30px; }
+        .card-container { display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%; max-width: 400px; }
+        
+        .app-card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); text-decoration: none; color: #333; transition: transform 0.2s; border: 2px solid transparent; display: flex; align-items: center; gap: 15px; }
+        .app-card:hover { transform: translateY(-5px); border-color: #4F46E5; }
+        
+        .icon { font-size: 2.5rem; background: #EEF2FF; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 15px; }
+        .info { text-align: left; }
+        .title { font-weight: bold; font-size: 1.2rem; display: block; }
+        .desc { color: #666; font-size: 0.9rem; }
+
+        footer { margin-top: 40px; color: #999; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+
+    <div class="logo">🎓</div>
+    <h1>全方位學習助手</h1>
+
+    <div class="card-container">
+        <a href="quiz.html" class="app-card">
+            <div class="icon">📖</div>
+            <div class="info">
+                <span class="title">試卷生成-MC題</span>
+                <span class="desc">雲端同步、自動讀題、錯字庫</span>
+            </div>
+        </a>
+
+        <a href="quiz1.html" class="app-card">
+            <div class="icon">⚡</div>
+            <div class="info">
+                <span class="title">試卷生成2.0</span>
+                <span class="desc">專門針對考試生成</span>
+            </div>
+        </a>
+    </div>
+
+    <footer>
+        &copy; 2024 家長救星系列@莊媽
+    </footer>
+
+</body>
+</html>
