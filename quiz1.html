@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quiz 2Easy V2 - 智能試卷生成器 (多API相容版)</title>
+    <title>Quiz 2Easy V2 - 智能試卷生成器 (多API相容 & 跨域調試優化版)</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -97,9 +97,9 @@
                     <i class="fa-solid fa-graduation-cap text-xl"></i>
                 </div>
                 <div>
-                    <span class="text-xs font-semibold uppercase tracking-wider text-brand-500">Upgrade Edition V2.2</span>
+                    <span class="text-xs font-semibold uppercase tracking-wider text-brand-500">Upgrade Edition V2.5</span>
                     <h1 class="text-xl font-bold text-slate-900 flex items-center gap-2">
-                        Quiz 2Easy V2 <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full border border-slate-200">全能 API 試卷生成系統</span>
+                        Quiz 2Easy V2 <span class="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200 font-bold">API CORS 偵錯優化版</span>
                     </h1>
                 </div>
             </div>
@@ -122,7 +122,7 @@
     <main class="max-w-7xl mx-auto px-4 py-6 md:py-8">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
-            <!-- Left Panel: Configurations & Scope Upload (lg:col-span-5) -->
+            <!-- Left Panel: Configurations & Scope Upload -->
             <div class="lg:col-span-5 space-y-6 no-print">
                 
                 <!-- Section 1: 考試範圍與文件上傳 -->
@@ -239,7 +239,7 @@
                     </div>
                 </div>
 
-                <!-- Section 3: 題型與配分調色盤 -->
+                <!-- Section 3: 題型與配分 -->
                 <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
                     <div class="flex items-center gap-2">
                         <span class="h-8 w-8 rounded-lg bg-indigo-50 flex items-center justify-center text-brand-600 font-semibold text-sm">3</span>
@@ -389,14 +389,14 @@
     </main>
 
     <!-- Modal: API Settings dialog -->
-    <div id="api-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 hidden no-print">
-        <div class="bg-white rounded-3xl border border-slate-200 w-full max-w-lg p-6 m-4 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+    <div id="api-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 hidden no-print p-4">
+        <div class="bg-white rounded-3xl border border-slate-200 w-full max-w-lg p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
             <button onclick="closeApiModal()" class="absolute top-4 right-4 h-8 w-8 rounded-full hover:bg-slate-100 text-slate-400 flex items-center justify-center transition"><i class="fa-solid fa-xmark"></i></button>
             <div class="flex items-center gap-3 mb-4">
                 <div class="h-10 w-10 bg-indigo-50 text-brand-600 rounded-xl flex items-center justify-center"><i class="fa-solid fa-gears text-lg"></i></div>
                 <div>
-                    <h3 class="font-bold text-slate-900 text-lg">設定 AI 引擎供應商</h3>
-                    <p class="text-xs text-slate-500">自由切換 DeepSeek / OpenAI / Gemini / Ollama</p>
+                    <h3 class="font-bold text-slate-900 text-lg">設定 AI 引擎與 CORS 代理</h3>
+                    <p class="text-xs text-slate-500">解決瀏覽器跨域（CORS）阻擋與 API 連線問題</p>
                 </div>
             </div>
             
@@ -406,10 +406,10 @@
                     <label class="block text-xs font-semibold text-slate-500 mb-1.5">選擇 AI 供應商</label>
                     <select id="api-provider" onchange="onProviderChange()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-500 transition font-medium">
                         <option value="none">模擬本地生成模式 (不需要 API Key)</option>
-                        <option value="deepseek">DeepSeek (極佳性價比、中文首選)</option>
-                        <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
-                        <option value="gemini">Google Gemini (高效穩定)</option>
-                        <option value="ollama">Ollama / 自訂本地 API (完全免費、高隱私)</option>
+                        <option value="deepseek">DeepSeek (極佳性價比、中文首選) [需防跨域或代理]</option>
+                        <option value="openai">OpenAI (GPT-4o / GPT-4o-mini) [需防跨域或代理]</option>
+                        <option value="gemini">Google Gemini (完美支援瀏覽器直接呼叫)</option>
+                        <option value="ollama">Ollama / 自訂本地 API (完全免費、需開啟 Origins)</option>
                     </select>
                 </div>
 
@@ -429,16 +429,129 @@
                         <label class="block text-xs font-semibold text-slate-500 mb-1.5">指定模型名稱 (Model Name)</label>
                         <input id="api-model" type="text" placeholder="預設自動辨別" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-500 transition">
                     </div>
+
+                    <!-- CORS Proxy Option for Front-end Fetching -->
+                    <div id="cors-proxy-box" class="border border-indigo-100 bg-indigo-50/20 rounded-2xl p-4 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-shield-halved text-brand-600 text-sm"></i>
+                                <span class="text-xs font-bold text-slate-800">CORS 瀏覽器防跨域代理助手</span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="use-cors-proxy" class="sr-only peer" onchange="toggleCorsProxyLabel()">
+                                <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-600"></div>
+                            </label>
+                        </div>
+                        <p class="text-[11px] text-slate-500 leading-relaxed">
+                            開啟此功能將會透過公用安全代理伺服器（例如 cors-anywhere）轉發 API 請求，解決 OpenAI/DeepSeek 拒絕瀏覽器直接連線的問題。
+                        </p>
+                        <div id="cors-url-container" class="hidden">
+                            <label class="block text-[10px] font-semibold text-slate-500 mb-1">自訂代理前綴 (CORS Proxy URL)</label>
+                            <input id="cors-proxy-url" type="text" value="https://cors-anywhere.herokuapp.com/" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-brand-500 transition">
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="bg-indigo-50/50 rounded-2xl p-4 border border-indigo-50 text-xs text-slate-600 leading-relaxed space-y-1.5">
-                    <p class="font-semibold text-brand-700 flex items-center gap-1"><i class="fa-solid fa-shield-halved"></i> 隱私保護保證：</p>
-                    <p>您的所有 API Key 與設定皆安全地儲存於您的**瀏覽器本地快取 (localStorage)**。網頁直接與 AI 官方伺服器通訊，無任何第三方後端會側錄或收集您的金鑰，安全無虞。</p>
+                    <p class="font-semibold text-brand-700 flex items-center gap-1"><i class="fa-solid fa-lock"></i> 隱私安全保證：</p>
+                    <p>您的 API Key 將會儲存於您本機瀏覽器（localStorage）。如欲避免 CORS 困擾，強力推薦使用 **Google Gemini API**，它預設完美支援瀏覽器直接呼叫。</p>
                 </div>
                 
                 <div class="flex gap-2">
                     <button onclick="saveApiKey()" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-brand-500/10 hover:shadow-brand-500/25 transition">儲存並應用</button>
                     <button onclick="clearApiKey()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold px-4 rounded-xl transition font-medium">清除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: API Diagnostics Console -->
+    <div id="diagnostics-modal" class="fixed inset-0 bg-slate-950/75 backdrop-blur-md flex items-center justify-center z-50 hidden no-print p-4">
+        <div class="bg-white rounded-3xl border border-slate-200 w-full max-w-xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
+            <button onclick="closeDiagnosticsModal()" class="absolute top-4 right-4 h-8 w-8 rounded-full hover:bg-slate-100 text-slate-400 flex items-center justify-center transition"><i class="fa-solid fa-xmark"></i></button>
+            
+            <div class="flex items-center gap-3 mb-5 pb-3 border-b border-slate-100">
+                <div class="h-12 w-12 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-slate-900 text-lg">AI API 連線與安全診斷報告</h3>
+                    <p class="text-xs text-slate-500">檢測到連線異常，以下是為您分析的詳細原因與解決方案</p>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <!-- Diagnostic Error Box -->
+                <div class="bg-slate-900 text-slate-100 p-4 rounded-2xl font-mono text-xs space-y-1">
+                    <p class="text-amber-400 font-bold"><i class="fa-solid fa-bug mr-1"></i>系統錯誤報告 (Error Logs):</p>
+                    <p id="diag-raw-error" class="text-slate-300 break-all leading-normal">TypeError: Failed to fetch</p>
+                    <p class="text-[10px] text-slate-500 mt-2">提示：這通常意味著瀏覽器的安全防禦政策（CORS）阻擋了這次連線。</p>
+                </div>
+
+                <!-- Guided Solutions Accordion -->
+                <div class="space-y-3">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">🛠️ 快速解決方案：</h4>
+                    
+                    <!-- Solution 1: Google Gemini -->
+                    <div class="border border-slate-200 rounded-2xl p-3.5 hover:border-brand-300 transition bg-slate-50/50">
+                        <div class="flex items-start gap-3">
+                            <div class="h-6 w-6 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs shrink-0 font-bold">1</div>
+                            <div class="space-y-1">
+                                <p class="text-xs font-bold text-slate-950 flex items-center gap-2">
+                                    <span>改用 Google Gemini API</span>
+                                    <span class="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-black">最推薦 & 最穩定</span>
+                                </p>
+                                <p class="text-[11px] text-slate-500 leading-relaxed">
+                                    Google Gemini 的伺服器**完全支援瀏覽器直接跨域連線**。如果你不想設定任何代理或瀏覽器插件，只需在 AI 設定中換成 Gemini API Key，即可秒速一鍵生成。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Solution 2: Browser CORS Extension -->
+                    <div class="border border-slate-200 rounded-2xl p-3.5 hover:border-brand-300 transition bg-slate-50/50">
+                        <div class="flex items-start gap-3">
+                            <div class="h-6 w-6 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs shrink-0 font-bold">2</div>
+                            <div class="space-y-1">
+                                <p class="text-xs font-bold text-slate-950 flex items-center gap-1">
+                                    <span>安裝瀏覽器防跨域插件 (CORS Unblock)</span>
+                                    <span class="text-[9px] bg-brand-100 text-brand-800 px-1.5 py-0.5 rounded font-bold">解決 OpenAI / DeepSeek 首選</span>
+                                </p>
+                                <p class="text-[11px] text-slate-500 leading-relaxed">
+                                    因為 OpenAI 和 DeepSeek 的安全機制限制，請在瀏覽器（Chrome / Edge）安裝：
+                                    <strong class="text-brand-600">「Allow CORS: Access-Control-Allow-Origin」</strong> 擴充功能，並將其啟用。啟用後重新點擊生成，便可完全繞過阻擋。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Solution 3: Ollama CORS setup -->
+                    <div class="border border-slate-200 rounded-2xl p-3.5 hover:border-brand-300 transition bg-slate-50/50">
+                        <div class="flex items-start gap-3">
+                            <div class="h-6 w-6 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs shrink-0 font-bold">3</div>
+                            <div class="space-y-1">
+                                <p class="text-xs font-bold text-slate-950">
+                                    如果您使用的是本地 Ollama：
+                                </p>
+                                <p class="text-[11px] text-slate-500 leading-relaxed">
+                                    必須在啟動 Ollama 前，將環境變數設定為允許跨域。
+                                </p>
+                                <div class="bg-slate-100 p-2 rounded-lg text-[10px] font-mono mt-1 text-slate-700">
+                                    <strong>Windows CMD:</strong> set OLLAMA_ORIGINS=* && ollama serve<br>
+                                    <strong>Mac/Linux Terminal:</strong> OLLAMA_ORIGINS="*" ollama serve
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 pt-2 border-t border-slate-100">
+                    <button onclick="closeDiagnosticsModal(); openApiModal();" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-brand-500/10 transition text-xs flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-gear"></i> 開啟 API 設定面板
+                    </button>
+                    <button onclick="closeDiagnosticsModal(); triggerMockExecution();" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-4 rounded-xl transition text-xs">
+                        切換成「模擬模式」看效果
+                    </button>
                 </div>
             </div>
         </div>
@@ -513,7 +626,7 @@
                 ],
                 'tf': [
                     { q: "兩個真分數相乘，所得出的積一定小於其中任何一個乘數。", ans: "T", explanation: "因為真分數小於1，乘以一個小於1的數，數值必定會變小。" },
-                    { q: "分數的除法法則就是將除數顛倒（取倒數）後，再與被除數相乘。", ans: "T", explanation: "除以一個數等於乘以這個數的倒數。例如 a / (b/c) = a * (c/b)。" }
+                    { q: "分數的除法法則就是將除數顛倒（取倒數）後，再與被除數相乘。", ans: "T", explanation: "除以一個數等於乘以這個數的倒數。例如 a / (b/c) = a * (c/b)." }
                 ],
                 'short': [
                     { q: "小明有一張 50 元的紙幣，他買了 3包 價值每包 8又1/2 元的糖果，請問店員應該找回多少元給他？請列明步驟說明。", ans: "1. 糖果總共價值：3 * 8.5 = 25.5 元 (或 25又1/2 元)\n2. 找回金額：50 - 25.5 = 24.5 元 (或 24又1/2 元)\n答：店員應該找回 24.5 元給他。", explanation: "本題測驗分數與小數的混合運算和生活實際找贖問題。" }
@@ -530,7 +643,7 @@
                 ],
                 'tf': [
                     { q: "植物的莖部只負責支撐身體，不參與水分的運輸傳導。", ans: "F", explanation: "莖部內部含有導管和篩管，是負責輸送水分和養分的交通樞紐。" },
-                    { q: "降低家庭中的用電量和減少搭乘燃油車，有助於降低個人的碳足跡。", ans: "T", explanation: "用電與燃油車皆會燃燒化石燃料產生溫室氣體，節電減碳最直接有效。" }
+                    { q: "降低家庭中的用電量 and 減少搭乘燃油車，有助於降低個人的碳足跡。", ans: "T", explanation: "用電與燃油車皆會燃燒化石燃料產生溫室氣體，節電減碳最直接有效。" }
                 ],
                 'short': [
                     { q: "請簡述地球上的「水循環」系統是如何運作的，必須包含三個核心物理轉變步驟。", ans: "1. 地表水（海洋、河流）受日照加熱【蒸發】成為水蒸氣升空。\n2. 水蒸氣在高空遇冷【凝結】成小水滴或冰晶，聚集形成雲和雨雪。\n3. 雨雪降落回地面【降水】，流入江河，完成一個循環。", explanation: "需點出蒸發、凝結、降水三個主要運作環節。" }
@@ -570,7 +683,6 @@
             const btnQ = document.getElementById('btn-view-q');
             const btnA = document.getElementById('btn-view-a');
             const ansSection = document.getElementById('answer-key-section');
-            const canvas = document.getElementById('a4-canvas');
 
             if (view === 'questions') {
                 btnQ.className = "flex items-center gap-2 text-xs md:text-sm px-4 py-2 rounded-xl bg-brand-50 text-brand-600 font-bold transition";
@@ -692,17 +804,35 @@
             document.getElementById('api-modal').classList.add('hidden');
         }
 
+        function toggleCorsProxyLabel() {
+            const isChecked = document.getElementById('use-cors-proxy').checked;
+            const container = document.getElementById('cors-url-container');
+            if (isChecked) {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
         function onProviderChange() {
             const provider = document.getElementById('api-provider').value;
             const keyLabel = document.getElementById('api-key-label');
             const keyInput = document.getElementById('api-key-input');
             const customBox = document.getElementById('custom-endpoint-box');
             const modelInput = document.getElementById('api-model');
+            const proxyBox = document.getElementById('cors-proxy-box');
 
             if (provider === 'none') {
                 document.getElementById('api-key-container').classList.add('hidden');
             } else {
                 document.getElementById('api-key-container').classList.remove('hidden');
+            }
+
+            // Proxy is recommended for OpenAI / DeepSeek
+            if (provider === 'deepseek' || provider === 'openai') {
+                proxyBox.classList.remove('hidden');
+            } else {
+                proxyBox.classList.add('hidden');
             }
 
             // Adjust placeholders based on selection
@@ -735,12 +865,16 @@
             const apiKey = document.getElementById('api-key-input').value.trim();
             const endpoint = document.getElementById('api-endpoint').value.trim();
             const modelName = document.getElementById('api-model').value.trim();
+            const useProxy = document.getElementById('use-cors-proxy').checked;
+            const proxyUrl = document.getElementById('cors-proxy-url').value.trim();
 
             const config = {
                 provider: provider,
                 apiKey: apiKey,
                 endpoint: endpoint,
-                model: modelName
+                model: modelName,
+                useProxy: useProxy,
+                proxyUrl: proxyUrl
             };
 
             localStorage.setItem('quiz2easy_api_config', JSON.stringify(config));
@@ -754,6 +888,7 @@
             document.getElementById('api-key-input').value = '';
             document.getElementById('api-endpoint').value = '';
             document.getElementById('api-model').value = '';
+            document.getElementById('use-cors-proxy').checked = false;
             onProviderChange();
             updateApiStatusUI({ provider: 'none' });
             closeApiModal();
@@ -768,7 +903,10 @@
                     document.getElementById('api-key-input').value = config.apiKey || '';
                     document.getElementById('api-endpoint').value = config.endpoint || '';
                     document.getElementById('api-model').value = config.model || '';
+                    document.getElementById('use-cors-proxy').checked = !!config.useProxy;
+                    document.getElementById('cors-proxy-url').value = config.proxyUrl || 'https://cors-anywhere.herokuapp.com/';
                     
+                    toggleCorsProxyLabel();
                     onProviderChange();
                     updateApiStatusUI(config);
                 } catch(e) {
@@ -797,6 +935,21 @@
                 text.innerText = `${providerName} 智能生成模式`;
                 btn.className = "flex items-center gap-2 text-sm bg-emerald-50 text-emerald-700 px-4 py-2 rounded-xl border border-emerald-200 transition";
             }
+        }
+
+        // Diagnostic triggers
+        function openDiagnosticsModal(errorMsg) {
+            document.getElementById('diag-raw-error').innerText = errorMsg || 'TypeError: Failed to fetch (可能被瀏覽器 CORS 政策阻擋)';
+            document.getElementById('diagnostics-modal').classList.remove('hidden');
+        }
+
+        function closeDiagnosticsModal() {
+            document.getElementById('diagnostics-modal').classList.add('hidden');
+        }
+
+        function triggerMockExecution() {
+            const subject = document.getElementById('config-subject').value;
+            fallbackToMockGeneration(subject);
         }
 
         // Active prompt compiler and dispatch handler
@@ -878,7 +1031,7 @@ Make sure all content is perfectly in traditional Chinese (except English subjec
                             })
                         });
 
-                        if (!response.ok) throw new Error('Gemini API 響應錯誤。');
+                        if (!response.ok) throw new Error('Gemini API 響應錯誤。請確認您的 API Key 是否正確且未過期。');
                         const resData = await response.json();
                         const rawJson = resData.candidates[0].content.parts[0].text;
                         parsedPaper = JSON.parse(cleanJsonString(rawJson));
@@ -896,11 +1049,17 @@ Make sure all content is perfectly in traditional Chinese (except English subjec
                             modelName = config.model || "deepseek-chat";
                         } else if (config.provider === 'ollama') {
                             apiUrl = config.endpoint || "http://localhost:11434/v1/chat/completions";
-                            // For Ollama completions, the endpoint needs to end properly
                             if (!apiUrl.endsWith('/chat/completions') && !apiUrl.endsWith('/chat/completions/')) {
                                 apiUrl = apiUrl.replace(/\/+$/, '') + '/chat/completions';
                             }
                             modelName = config.model || "llama3";
+                        }
+
+                        // Apply CORS Proxy if enabled
+                        if (config.useProxy && config.proxyUrl && (config.provider === 'openai' || config.provider === 'deepseek')) {
+                            // Trim trailing/leading slashes of proxy
+                            const formattedProxy = config.proxyUrl.endsWith('/') ? config.proxyUrl : config.proxyUrl + '/';
+                            apiUrl = formattedProxy + apiUrl;
                         }
 
                         const headers = {
@@ -942,8 +1101,13 @@ Make sure all content is perfectly in traditional Chinese (except English subjec
                     }
 
                 } catch (err) {
-                    alert('API 生成失敗：' + err.message + '\n系統將自動切換至「模擬模式」以展示生成效果。');
-                    fallbackToMockGeneration(subject);
+                    console.error("API Error caught: ", err);
+                    let displayMsg = err.message;
+                    if (err instanceof TypeError && err.message.includes('fetch')) {
+                        displayMsg = `TypeError: ${err.message}\n這極有可能是因為瀏覽器跨域（CORS）安全機制，阻擋了網頁直接向 AI 伺服器傳送請求。`;
+                    }
+                    // Trigger custom elegant diagnostic report
+                    openDiagnosticsModal(displayMsg);
                 }
             } else {
                 // Mock generator execution
@@ -1025,7 +1189,7 @@ Make sure all content is perfectly in traditional Chinese (except English subjec
                         <div class="text-xs">
                             <span class="font-bold text-slate-500">第 ${index+1} 題：</span>
                             <span class="font-extrabold text-brand-600 bg-indigo-50 px-1.5 py-0.5 rounded">${item.ans}</span>
-                            <p class="text-[10px] text-slate-400 mt-1">${item.explanation}</p>
+                            <p class="text-[10px] text-slate-400 mt-1">${item.explanation || ''}</p>
                         </div>
                     `;
                 });
@@ -1062,7 +1226,7 @@ Make sure all content is perfectly in traditional Chinese (except English subjec
                         <div class="text-xs">
                             <span class="font-bold text-slate-500">第 ${index+1} 題：</span>
                             <span class="font-extrabold text-brand-600 bg-indigo-50 px-1.5 py-0.5 rounded">${item.ans}</span>
-                            <p class="text-[10px] text-slate-400 mt-1">${item.explanation}</p>
+                            <p class="text-[10px] text-slate-400 mt-1">${item.explanation || ''}</p>
                         </div>
                     `;
                 });
@@ -1100,7 +1264,7 @@ Make sure all content is perfectly in traditional Chinese (except English subjec
                         <div class="text-xs">
                             <span class="font-bold text-slate-500">第 ${index+1} 題：</span>
                             <span class="font-extrabold text-brand-600 bg-indigo-50 px-1.5 py-0.5 rounded">${item.ans === 'T' ? '正確 (T)' : '錯誤 (F)'}</span>
-                            <p class="text-[10px] text-slate-400 mt-1">${item.explanation}</p>
+                            <p class="text-[10px] text-slate-400 mt-1">${item.explanation || ''}</p>
                         </div>
                     `;
                 });
@@ -1143,7 +1307,7 @@ Make sure all content is perfectly in traditional Chinese (except English subjec
                         <div class="text-xs border-b border-slate-100 pb-2 last:border-0">
                             <span class="font-bold text-slate-600 block mb-1">第 ${index+1} 題參考擬答：</span>
                             <div class="font-medium text-slate-800 bg-indigo-50/50 p-2.5 rounded-lg border border-indigo-50 leading-relaxed whitespace-pre-wrap">${item.ans}</div>
-                            <p class="text-[10px] text-slate-400 mt-1"><i class="fa-solid fa-circle-exclamation mr-1"></i>評分說明：${item.explanation}</p>
+                            <p class="text-[10px] text-slate-400 mt-1"><i class="fa-solid fa-circle-exclamation mr-1"></i>評分說明：${item.explanation || ''}</p>
                         </div>
                     `;
                 });
