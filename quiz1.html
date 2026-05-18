@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz 2Easy V2 - 智能試卷生成器</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'Noto Sans TC', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f8fafc;
+        }
+        /* 模擬 A4 尺寸 */
+        .a4-page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            box-sizing: border-box;
+            position: relative;
+        }
+        @media print {
+            body {
+                background: white;
+                margin: 0;
+                padding: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .a4-page {
+                width: 100%;
+                min-height: 100%;
+                margin: 0;
+                padding: 15mm;
+                box-shadow: none;
+                page-break-after: always;
+            }
+            .page-break {
+                page-break-before: always;
+            }
+        }
+        /* 自訂捲軸 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased text-slate-800">
+
+    <!-- Top Navigation Bar -->
+    <nav class="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-30 no-print">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 bg-brand-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
+                    <i class="fa-solid fa-graduation-cap text-xl"></i>
+                </div>
+                <div>
+                    <span class="text-xs font-semibold uppercase tracking-wider text-brand-500">Upgrade Edition</span>
+                    <h1 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                        Quiz 2Easy V2 <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full border border-slate-200">智能考卷生成系統</span>
+                    </h1>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3 flex-wrap">
+                <!-- Real API Key Settings Indicator -->
+                <button onclick="openApiModal()" id="api-status-btn" class="flex items-center gap-2 text-sm bg-slate-50 hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-xl border border-slate-200 transition">
+                    <span id="api-dot" class="h-2 w-2 rounded-full bg-amber-500"></span>
+                    <span id="api-text" class="font-medium">模擬生成模式 (未輸入 API Key)</span>
+                    <i class="fa-solid fa-gear text-xs"></i>
+                </button>
+                <button onclick="window.print()" class="bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 transition flex items-center gap-2">
+                    <i class="fa-solid fa-print"></i> 列印 / 導出 PDF
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Workspace -->
+    <main class="max-w-7xl mx-auto px-4 py-6 md:py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- Left Panel: Configurations & Scope Upload (lg:col-span-5) -->
+            <div class="lg:col-span-5 space-y-6 no-print">
+                
+                <!-- Section 1: 考試範圍與文件上傳 -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <span class="h-8 w-8 rounded-lg bg-indigo-50 flex items-center justify-center text-brand-600 font-semibold text-sm">1</span>
+                            <h2 class="text-lg font-bold text-slate-950">設定考試範圍 (Syllabus)</h2>
+                        </div>
+                        <span class="text-xs text-brand-600 font-medium bg-indigo-50 px-2.5 py-1 rounded-full"><i class="fa-solid fa-bolt mr-1"></i>最重要步驟</span>
+                    </div>
+
+                    <!-- Input Tabs (Text / Upload File) -->
+                    <div class="flex border-b border-slate-200 mb-4">
+                        <button onclick="switchInputTab('text')" id="tab-btn-text" class="flex-1 pb-3 text-sm font-semibold border-b-2 border-brand-600 text-brand-600 text-center transition">
+                            <i class="fa-solid fa-pen-to-square mr-1.5"></i>直接輸入範圍
+                        </button>
+                        <button onclick="switchInputTab('file')" id="tab-btn-file" class="flex-1 pb-3 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-800 text-center transition">
+                            <i class="fa-solid fa-file-arrow-up mr-1.5"></i>上傳教材/相片
+                        </button>
+                    </div>
+
+                    <!-- Text Input Box -->
+                    <div id="input-pane-text" class="space-y-3">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">貼上溫習手冊、大綱或手寫內容：</label>
+                        <textarea id="scope-text" class="w-full h-36 p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm outline-none transition placeholder-slate-400" placeholder="例如：
+【中文科第三單元：修辭手法與課文理解】
+1. 比喻、擬人、排比修辭手法。
+2. 課文《大自然的話》深度理解。
+3. 詞彙：和煦、斑駁、盤旋、呼喚。"></textarea>
+                    </div>
+
+                    <!-- File Upload Box (Drag and Drop) -->
+                    <div id="input-pane-file" class="space-y-3 hidden">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">支援 PDF、DOCX 或 課本/工作紙相片：</label>
+                        <div id="dropzone" class="border-2 border-dashed border-slate-200 hover:border-brand-500 bg-slate-50/50 hover:bg-slate-50 rounded-xl p-6 text-center cursor-pointer transition relative">
+                            <input type="file" id="file-input" class="absolute inset-0 opacity-0 cursor-pointer" onchange="handleFileSelect(event)">
+                            <i class="fa-solid fa-cloud-arrow-up text-3xl text-slate-400 mb-2"></i>
+                            <p class="text-sm font-medium text-slate-700">拖曳檔案至此或 <span class="text-brand-600 hover:underline">點擊上傳</span></p>
+                            <p class="text-xs text-slate-400 mt-1">支援 PDF / Word / PNG / JPG</p>
+                        </div>
+                        
+                        <!-- Uploaded File Visual Indicator -->
+                        <div id="file-list" class="hidden bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <span class="h-9 w-9 rounded-lg bg-indigo-50 text-brand-600 flex items-center justify-center"><i id="file-icon" class="fa-solid fa-file-pdf"></i></span>
+                                <div class="min-w-0">
+                                    <p id="file-name" class="text-xs font-semibold text-slate-800 truncate">Syllabus.pdf</p>
+                                    <p id="file-size" class="text-[10px] text-slate-400">2.4 MB</p>
+                                </div>
+                            </div>
+                            <button onclick="removeFile()" class="h-7 w-7 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-600 flex items-center justify-center transition"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+
+                        <!-- Simulated Parsing Status -->
+                        <div id="parse-loader" class="hidden space-y-2">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="font-medium text-brand-600 animate-pulse"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>AI 正在光學識別 (OCR) 及分析考試範圍...</span>
+                                <span id="parse-percent" class="font-bold text-slate-700">0%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                <div id="parse-bar" class="bg-brand-600 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: 試卷細節設定 -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+                    <div class="flex items-center gap-2">
+                        <span class="h-8 w-8 rounded-lg bg-indigo-50 flex items-center justify-center text-brand-600 font-semibold text-sm">2</span>
+                        <h2 class="text-lg font-bold text-slate-950">考卷基礎設定</h2>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1.5">科目</label>
+                            <select id="config-subject" onchange="suggestScope()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500 transition">
+                                <option value="中文">中文 (Chinese)</option>
+                                <option value="英文" selected>英文 (English)</option>
+                                <option value="數學">數學 (Mathematics)</option>
+                                <option value="常識">常識 (General Studies)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1.5">年級</label>
+                            <select id="config-grade" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500 transition">
+                                <option value="小一 (Primary 1)">小一 (P.1)</option>
+                                <option value="小二 (Primary 2)">小二 (P.2)</option>
+                                <option value="小三 (Primary 3)">小三 (P.3)</option>
+                                <option value="小四 (Primary 4)" selected>小四 (P.4)</option>
+                                <option value="小五 (Primary 5)">小五 (P.5)</option>
+                                <option value="小六 (Primary 6)">小六 (P.6)</option>
+                                <option value="中一 (Secondary 1)">中一 (S.1)</option>
+                                <option value="中二 (Secondary 2)">中二 (S.2)</option>
+                                <option value="中三 (Secondary 3)">中三 (S.3)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1.5">題目難度</label>
+                            <select id="config-difficulty" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500 transition">
+                                <option value="Easy (基礎基礎)">基礎 (Easy)</option>
+                                <option value="Standard (標準難度)" selected>標準 (Standard)</option>
+                                <option value="Challenging (高難度/拔尖)">高難度 (Challenging)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1.5">總分目標</label>
+                            <input id="config-total-marks" type="number" value="100" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500 transition">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: 題型與配分調色盤 -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+                    <div class="flex items-center gap-2">
+                        <span class="h-8 w-8 rounded-lg bg-indigo-50 flex items-center justify-center text-brand-600 font-semibold text-sm">3</span>
+                        <h2 class="text-lg font-bold text-slate-950">題型組合與數量配比</h2>
+                    </div>
+
+                    <!-- Question Types Selectors -->
+                    <div class="space-y-3.5">
+                        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                            <div class="flex items-center gap-2.5">
+                                <input type="checkbox" id="type-mc" checked class="h-4 w-4 text-brand-600 rounded focus:ring-brand-500 border-slate-300">
+                                <span class="text-sm font-semibold text-slate-800">一、選擇題 (MC)</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="text-xs text-slate-400 mr-2">題數:</span>
+                                <input type="number" id="type-mc-count" value="4" class="w-12 bg-white text-center border border-slate-200 rounded-lg py-1 text-xs font-semibold outline-none">
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                            <div class="flex items-center gap-2.5">
+                                <input type="checkbox" id="type-blank" checked class="h-4 w-4 text-brand-600 rounded focus:ring-brand-500 border-slate-300">
+                                <span class="text-sm font-semibold text-slate-800">二、填充題 (Fill in Blanks)</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="text-xs text-slate-400 mr-2">題數:</span>
+                                <input type="number" id="type-blank-count" value="4" class="w-12 bg-white text-center border border-slate-200 rounded-lg py-1 text-xs font-semibold outline-none">
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                            <div class="flex items-center gap-2.5">
+                                <input type="checkbox" id="type-tf" checked class="h-4 w-4 text-brand-600 rounded focus:ring-brand-500 border-slate-300">
+                                <span class="text-sm font-semibold text-slate-800">三、是非題 (True / False)</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="text-xs text-slate-400 mr-2">題數:</span>
+                                <input type="number" id="type-tf-count" value="3" class="w-12 bg-white text-center border border-slate-200 rounded-lg py-1 text-xs font-semibold outline-none">
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                            <div class="flex items-center gap-2.5">
+                                <input type="checkbox" id="type-short" checked class="h-4 w-4 text-brand-600 rounded focus:ring-brand-500 border-slate-300">
+                                <span class="text-sm font-semibold text-slate-800">四、問答題 / 綜合分析</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="text-xs text-slate-400 mr-2">題數:</span>
+                                <input type="number" id="type-short-count" value="1" class="w-12 bg-white text-center border border-slate-200 rounded-lg py-1 text-xs font-semibold outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Prompt Tuning Override -->
+                    <div class="pt-2">
+                        <label class="block text-xs font-semibold text-slate-500 mb-1.5 flex items-center gap-1">
+                            <span>額外 AI 指令 (選填)：</span>
+                            <span class="text-[10px] bg-indigo-50 text-brand-600 px-1.5 py-0.5 rounded">極客功能</span>
+                        </label>
+                        <input id="custom-prompt" type="text" placeholder="例如：特別加強情境應用題、多加一些文法陷阱題" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500 transition">
+                    </div>
+
+                    <button onclick="generatePaper()" id="generate-btn" class="w-full bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-brand-500/10 hover:shadow-brand-500/25 transition duration-150 flex items-center justify-center gap-2 text-base">
+                        <i class="fa-solid fa-wand-magic-sparkles animate-spin-slow"></i> 🧙‍♂️ 根據範圍一鍵生成考卷
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Panel: Sandbox & A4 Real-Time Preview (lg:col-span-7) -->
+            <div class="lg:col-span-7 space-y-4">
+                
+                <!-- Tab Switching Panel -->
+                <div class="flex items-center justify-between bg-white px-4 py-2 rounded-2xl border border-slate-200 shadow-sm no-print">
+                    <div class="flex gap-2">
+                        <button onclick="switchViewTab('questions')" id="btn-view-q" class="flex items-center gap-2 text-xs md:text-sm px-4 py-2 rounded-xl bg-brand-50 text-brand-600 font-bold transition">
+                            <i class="fa-solid fa-file-text"></i> 學生試卷預覽
+                        </button>
+                        <button onclick="switchViewTab('answers')" id="btn-view-a" class="flex items-center gap-2 text-xs md:text-sm px-4 py-2 rounded-xl text-slate-500 hover:text-slate-800 font-medium transition">
+                            <i class="fa-solid fa-key"></i> 答案及評分卷
+                        </button>
+                    </div>
+                    <div class="text-[11px] text-slate-400 font-medium hidden md:block">
+                        <i class="fa-solid fa-circle-info mr-1"></i> 直接點擊文字可即時修改
+                    </div>
+                </div>
+
+                <!-- Live A4 Page Canvas -->
+                <div class="overflow-x-auto p-1 bg-slate-100 rounded-3xl border border-slate-200">
+                    <div class="a4-page text-black shadow-lg" id="a4-canvas">
+                        
+                        <!-- Header section -->
+                        <div class="border-b-4 border-double border-slate-900 pb-4 mb-6">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h3 id="paper-school-name" contenteditable="true" class="text-lg font-black tracking-wide border-b border-dashed border-transparent hover:border-slate-400 outline-none">香港新世紀智能小學</h3>
+                                    <h4 class="text-md font-bold text-slate-700">2025-2026學年度 下學期定期學力測驗</h4>
+                                </div>
+                                <div class="text-right border-l-2 border-slate-900 pl-4">
+                                    <span class="text-xs bg-slate-900 text-white font-black px-2 py-0.5 rounded tracking-wide">絕密 / Confidential</span>
+                                    <div class="text-xs font-semibold mt-1">時間：45分鐘</div>
+                                    <div class="text-xs font-semibold">滿分：<span id="label-target-marks">100</span> 分</div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4 flex justify-between items-center text-sm font-bold bg-slate-100 p-2 rounded border border-slate-200">
+                                <div>科目：<span id="label-subject">英文 (English)</span></div>
+                                <div>年級：<span id="label-grade">小四 (Primary 4)</span></div>
+                                <div>難度：<span id="label-difficulty">標準 (Standard)</span></div>
+                            </div>
+
+                            <!-- Student info block -->
+                            <div class="grid grid-cols-4 gap-2 mt-4 text-xs font-bold border-t border-slate-300 pt-3">
+                                <div>班別：_________________</div>
+                                <div>姓名：_________________</div>
+                                <div>學號：____</div>
+                                <div class="text-right">得分：/ <span id="label-header-total">100</span> 分</div>
+                            </div>
+                        </div>
+
+                        <!-- Interactive Question Space -->
+                        <div id="questions-area" class="space-y-6">
+                            <!-- Questions will be injected here dynamically -->
+                        </div>
+                        
+                        <!-- Print Page Break Marker & Answer Sheet Canvas -->
+                        <div class="page-break my-10 border-t border-dashed border-slate-400 pt-10 no-print">
+                            <div class="text-center text-xs text-slate-400 tracking-wider font-bold">--- A4 紙張分頁線：下方為答案及評分解析 ---</div>
+                        </div>
+
+                        <!-- Answer section -->
+                        <div id="answer-key-section" class="pt-4">
+                            <h3 class="text-lg font-extrabold text-indigo-700 mb-4 border-b-2 border-slate-300 pb-2 flex items-center justify-between">
+                                <span>【答案、解析與評分準則 (Answer Key)】</span>
+                                <span class="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-3 py-1 rounded-full font-bold">只供家長/教師參考</span>
+                            </h3>
+                            <div id="answers-area" class="space-y-4 text-sm">
+                                <!-- Answers will be dynamically injected here -->
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Modal: API Settings dialog -->
+    <div id="api-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 hidden no-print">
+        <div class="bg-white rounded-3xl border border-slate-200 w-full max-w-md p-6 m-4 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+            <button onclick="closeApiModal()" class="absolute top-4 right-4 h-8 w-8 rounded-full hover:bg-slate-100 text-slate-400 flex items-center justify-center transition"><i class="fa-solid fa-xmark"></i></button>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="h-10 w-10 bg-indigo-50 text-brand-600 rounded-xl flex items-center justify-center"><i class="fa-solid fa-key text-lg"></i></div>
+                <div>
+                    <h3 class="font-bold text-slate-900 text-lg">設定 Gemini API 金鑰</h3>
+                    <p class="text-xs text-slate-500">串接您自己的 API Key 解鎖真實文件理解與題目生成</p>
+                </div>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1.5">Gemini API Key</label>
+                    <input id="api-key-input" type="password" placeholder="請貼上 AIzaSy..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-500 transition">
+                </div>
+                
+                <div class="bg-indigo-50/50 rounded-2xl p-4 border border-indigo-50 text-xs text-slate-600 leading-relaxed space-y-1.5">
+                    <p class="font-semibold text-brand-700 flex items-center gap-1"><i class="fa-solid fa-shield-halved"></i> 隱私保護保證：</p>
+                    <p>1. 本網頁直接與 Google Gemini 伺服器通訊，您的 API Key 將會**安全地儲存於您的瀏覽器本地 (localStorage)**。</p>
+                    <p>2. 沒有任何遠端後端會收集您的密鑰，請放心使用。</p>
+                </div>
+                
+                <div class="flex gap-2">
+                    <button onclick="saveApiKey()" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-brand-500/10 hover:shadow-brand-500/25 transition">儲存金鑰</button>
+                    <button onclick="clearApiKey()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold px-4 rounded-xl transition">清除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Area containing logical flow -->
+    <script>
+        // Preset / Pre-baked syllabus for rapid mock loading based on selected subject
+        const mockSyllabuses = {
+            '中文': `【中文科第三單元：修辭手法與課文理解】
+1. 修辭：比喻、擬人、排比修辭手法。
+2. 課文《大自然的話》深度理解。
+3. 詞彙：和煦、斑駁、盤旋、呼喚。`,
+            '英文': `【English Exam Syllabus: Module 2】
+1. Grammar: Present Perfect Tense (e.g., have/has + past participle) & Past Tense.
+2. Prepositions of Time (e.g., in, on, at, during).
+3. Vocabulary related to "Healthy Lifestyle" (e.g., balanced diet, physical exercises, hydration).`,
+            '數學': `【數學科第四單元：分數的進階計算】
+1. 同分母、異分母分數乘法與除法。
+2. 分數四則混合運算。
+3. 應用題（面積計算、物品分裝與找贖）。`,
+            '常識': `【常識科：奇妙的自然界與科學】
+1. 植物的構造與生命週期（根、莖、葉、傳粉過程）。
+2. 水的三態變化（固、液、氣態轉化與水循環）。
+3. 基礎環保觀念（減少碳排放、資源分類回收）。`
+        };
+
+        // Static fallback generator in case API key is not connected
+        const prebakedQuestions = {
+            '中文': {
+                'mc': [
+                    { q: "「春天的風像一雙溫柔的手撫摸著大地。」這句話運用了甚麼修辭手法？", options: ["A. 排比", "B. 比喻", "C. 擬人", "D. 誇張"], ans: "C. 擬人", explanation: "將「春風」擬作「溫柔的手」，賦予其人類「撫摸」的動作，為擬人手法。" },
+                    { q: "下列哪一個詞語的讀音與「盤旋」的「旋」相同？", options: ["A. 旋風", "B. 凱旋", "C. 宣傳", "D. 船隻"], ans: "B. 凱旋", explanation: "盤旋與凱旋的「旋」均讀作 xuán。" }
+                ],
+                'blank': [
+                    { q: "春天來了，陽光灑在微風中，顯得格外的 (和煦 / 斑駁)。", ans: "和煦", explanation: "和煦常用於形容春天的陽光溫暖舒適。" },
+                    { q: "老鷹在天空中 (盤旋 / 呼喚) 了很久，似乎正在尋找獵物。", ans: "盤旋", explanation: "盤旋指環繞飛行的動作，最符合老鷹在空中的動態形容。" }
+                ],
+                'tf': [
+                    { q: "《大自然的話》課文中提到，大自然是不會說話的，一切只是人們的幻想。", ans: "F", explanation: "課文是指大自然通過各種自然現象（如雁南飛、落葉）向我們「說話」，需要用心觀察。" },
+                    { q: "「排比」修辭手法必須由三個或以上結構相同或相似的句子組成。", ans: "T", explanation: "排比的定義即是三個或以上結構相似、語氣一致的短語或句子並排。" }
+                ],
+                'short': [
+                    { q: "請說明擬人修辭手法有甚麼好處，並運用「太陽」寫出一個簡單的擬人句。", ans: "擬人手法可以把事物描寫得更生動有趣、富有人情味，引起讀者的共鳴。 例子：早晨，紅彤彤的太陽公公微笑著爬上高高的山頭。", explanation: "擬人可賦予事物情感，寫作需緊扣擬人特徵。" }
+                ]
+            },
+            '英文': {
+                'mc': [
+                    { q: "She has already ________ that interesting adventure book twice.", options: ["A. read", "B. reads", "C. reading", "D. been read"], ans: "A. read", explanation: "In Present Perfect Tense (has/have + p.p.), the past participle of 'read' is 'read' (pronounced as 'red')." },
+                    { q: "The local marathon race is scheduled to begin ________ Sunday morning.", options: ["A. in", "B. on", "C. at", "D. during"], ans: "B. on", explanation: "We use 'on' for specific days of the week (e.g., on Sunday)." }
+                ],
+                'blank': [
+                    { q: "John ________ (live) in Hong Kong since he was born.", ans: "has lived", explanation: "The keyword 'since' indicates the action started in the past and continues to the present, requiring Present Perfect Tense." },
+                    { q: "To maintain a ________ diet, we must consume enough fruits and vegetables.", ans: "balanced", explanation: "A 'balanced diet' is a fixed collocation meaning a healthy intake of all nutrients." }
+                ],
+                'tf': [
+                    { q: "We should use the past tense with 'already' and 'yet' in perfect constructions.", ans: "F", explanation: "We use Present Perfect Tense (has/have + p.p.) with time markers like 'already' and 'yet'." },
+                    { q: "Proper hydration means drinking at least 8 cups of water or sugary drinks a day.", ans: "F", explanation: "Proper hydration refers to clean water, not sugary drinks, which are unhealthy." }
+                ],
+                'short': [
+                    { q: "Explain the main differences between 'Present Perfect Tense' and 'Simple Past Tense' with simple examples.", ans: "Present Perfect Tense is used for actions that started in the past and have connection to the present (e.g., 'I have eaten lunch.'). Simple Past Tense is used for finished actions with specific past time indicators (e.g., 'I ate lunch yesterday.').", explanation: "Needs to address the temporal connection to the present moment." }
+                ]
+            },
+            '數學': {
+                'mc': [
+                    { q: "若將 2/3 乘以 3/4，所得出的乘積是多少？", options: ["A. 1/2", "B. 5/7", "C. 6/12", "D. 9/8"], ans: "A. 1/2", explanation: "(2/3) * (3/4) = 6/12。化至最簡分數為 1/2。" },
+                    { q: "一條長方形桌布的長是 1又1/2 米，寬是 2/3 米。它的面積是多少平方米？", options: ["A. 1 平方米", "B. 2 平方米", "C. 3/4 平方米", "D. 1又1/3 平方米"], ans: "A. 1 平方米", explanation: "面積 = 長 * 寬 = (3/2) * (2/3) = 6/6 = 1 平方米。" }
+                ],
+                'blank': [
+                    { q: "媽媽把 5又1/2 公斤的白米平均分裝入每袋重 1/4 公斤的小袋子中，一共可以裝滿 ______ 袋。", ans: "22", explanation: "(11/2) / (1/4) = (11/2) * 4 = 22 袋。" },
+                    { q: "一條長 12 米的繩子，剪去它的 1/3，還剩餘 ______ 米。", ans: "8", explanation: "剩餘部分為整體的 2/3。12 * (2/3) = 8 米。" }
+                ],
+                'tf': [
+                    { q: "兩個真分數相乘，所得出的積一定小於其中任何一個乘數。", ans: "T", explanation: "因為真分數小於1，乘以一個小於1的數，數值必定會變小。" },
+                    { q: "分數的除法法則就是將除數顛倒（取倒數）後，再與被除數相乘。", ans: "T", explanation: "除以一個數等於乘以這個數的倒數。例如 a / (b/c) = a * (c/b)。" }
+                ],
+                'short': [
+                    { q: "小明有一張 50 元的紙幣，他買了 3包 價值每包 8又1/2 元的糖果，請問店員應該找回多少元給他？請列明步驟說明。", ans: "1. 糖果總共價值：3 * 8.5 = 25.5 元 (或 25又1/2 元)\n2. 找回金額：50 - 25.5 = 24.5 元 (或 24又1/2 元)\n答：店員應該找回 24.5 元給他。", explanation: "本題測驗分數與小數的混合運算和生活實際找贖問題。" }
+                ]
+            },
+            '常識': {
+                'mc': [
+                    { q: "植物主要是透過哪一個構造來吸收泥土中的水分和礦物質？", options: ["A. 葉片", "B. 根部", "C. 莖部", "D. 花朵"], ans: "B. 根部", explanation: "根部具有固著植物與吸收土壤水分與養分的功能。" },
+                    { q: "當水吸收熱量，從液態轉變為氣態的過程稱之為甚麼？", options: ["A. 凝結", "B. 蒸發", "C. 融化", "D. 昇華"], ans: "B. 蒸發", explanation: "水受熱氣化為水蒸氣的過程稱為蒸發或汽化。" }
+                ],
+                'blank': [
+                    { q: "花朵中的花粉需要傳播到雌蕊的柱頭上才能完成受精，這個過程叫做 ______。", ans: "傳粉", explanation: "花粉由雄蕊傳到雌蕊柱頭上的過程稱為傳粉（或授粉）。" },
+                    { q: "水蒸氣在高空遇到冷空氣時，會 ______ (凝結 / 蒸發) 成小水滴，聚集在一起形成雲朵。", ans: "凝結", explanation: "氣態轉變為液態的物理現象在科學上被稱作凝結。" }
+                ],
+                'tf': [
+                    { q: "植物的莖部只負責支撐身體，不參與水分的運輸傳導。", ans: "F", explanation: "莖部內部含有導管和篩管，是負責輸送水分和養分的交通樞紐。" },
+                    { q: "降低家庭中的用電量和減少搭乘燃油車，有助於降低個人的碳足跡。", ans: "T", explanation: "用電與燃油車皆會燃燒化石燃料產生溫室氣體，節電減碳最直接有效。" }
+                ],
+                'short': [
+                    { q: "請簡述地球上的「水循環」系統是如何運作的，必須包含三個核心物理轉變步驟。", ans: "1. 地表水（海洋、河流）受日照加熱【蒸發】成為水蒸氣升空。\n2. 水蒸氣在高空遇冷【凝結】成小水滴或冰晶，聚集形成雲和雨雪。\n3. 雨雪降落回地面【降水】，流入江河，完成一個循環。", explanation: "需點出蒸發、凝結、降水三個主要運作環節。" }
+                ]
+            }
+        };
+
+        // App Initial State
+        document.addEventListener('DOMContentLoaded', () => {
+            loadApiKey();
+            suggestScope();
+            switchViewTab('questions');
+        });
+
+        // Toggle text/file scopes
+        function switchInputTab(tab) {
+            const btnText = document.getElementById('tab-btn-text');
+            const btnFile = document.getElementById('tab-btn-file');
+            const paneText = document.getElementById('input-pane-text');
+            const paneFile = document.getElementById('input-pane-file');
+
+            if (tab === 'text') {
+                btnText.className = "flex-1 pb-3 text-sm font-semibold border-b-2 border-brand-600 text-brand-600 text-center transition";
+                btnFile.className = "flex-1 pb-3 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-800 text-center transition";
+                paneText.classList.remove('hidden');
+                paneFile.classList.add('hidden');
+            } else {
+                btnText.className = "flex-1 pb-3 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-800 text-center transition";
+                btnFile.className = "flex-1 pb-3 text-sm font-semibold border-b-2 border-brand-600 text-brand-600 text-center transition";
+                paneText.classList.add('hidden');
+                paneFile.classList.remove('hidden');
+            }
+        }
+
+        // Toggle student paper vs teacher answer sheets
+        function switchViewTab(view) {
+            const btnQ = document.getElementById('btn-view-q');
+            const btnA = document.getElementById('btn-view-a');
+            const ansSection = document.getElementById('answer-key-section');
+            const canvas = document.getElementById('a4-canvas');
+
+            if (view === 'questions') {
+                btnQ.className = "flex items-center gap-2 text-xs md:text-sm px-4 py-2 rounded-xl bg-brand-50 text-brand-600 font-bold transition";
+                btnA.className = "flex items-center gap-2 text-xs md:text-sm px-4 py-2 rounded-xl text-slate-500 hover:text-slate-800 font-medium transition";
+                ansSection.classList.add('no-print');
+                ansSection.style.opacity = '0.35';
+                ansSection.style.filter = 'grayscale(100%)';
+            } else {
+                btnQ.className = "flex items-center gap-2 text-xs md:text-sm px-4 py-2 rounded-xl text-slate-500 hover:text-slate-800 font-medium transition";
+                btnA.className = "flex items-center gap-2 text-xs md:text-sm px-4 py-2 rounded-xl bg-indigo-50 text-indigo-700 font-bold transition";
+                ansSection.classList.remove('no-print');
+                ansSection.style.opacity = '1';
+                ansSection.style.filter = 'none';
+                
+                // Scroll beautifully to answer section
+                setTimeout(() => {
+                    ansSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            }
+        }
+
+        // Suggest predefined scope based on subject selected
+        function suggestScope() {
+            const sub = document.getElementById('config-subject').value;
+            const textarea = document.getElementById('scope-text');
+            if(mockSyllabuses[sub]) {
+                textarea.value = mockSyllabuses[sub];
+            }
+        }
+
+        // File Handler Drag & Drop Simulation
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            displayFile(file);
+        }
+
+        function displayFile(file) {
+            const list = document.getElementById('file-list');
+            const loader = document.getElementById('parse-loader');
+            const dropzone = document.getElementById('dropzone');
+            
+            document.getElementById('file-name').innerText = file.name;
+            document.getElementById('file-size').innerText = (file.size / (1024 * 1024)).toFixed(2) + " MB";
+            
+            // Icon match
+            const icon = document.getElementById('file-icon');
+            if (file.type.includes('pdf')) {
+                icon.className = "fa-solid fa-file-pdf text-red-500 text-lg";
+            } else if (file.type.includes('word') || file.name.endsWith('.docx')) {
+                icon.className = "fa-solid fa-file-word text-blue-500 text-lg";
+            } else if (file.type.includes('image')) {
+                icon.className = "fa-solid fa-file-image text-emerald-500 text-lg";
+            } else {
+                icon.className = "fa-solid fa-file-alt text-slate-500 text-lg";
+            }
+
+            dropzone.classList.add('hidden');
+            list.classList.remove('hidden');
+            loader.classList.remove('hidden');
+
+            simulateOcrParsing(file.name);
+        }
+
+        // Mock Progress Bar of OCR file parsing
+        function simulateOcrParsing(fileName) {
+            let percent = 0;
+            const bar = document.getElementById('parse-bar');
+            const textNum = document.getElementById('parse-percent');
+            const scopeArea = document.getElementById('scope-text');
+
+            const interval = setInterval(() => {
+                percent += Math.floor(Math.random() * 15) + 5;
+                if (percent >= 100) {
+                    percent = 100;
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        document.getElementById('parse-loader').classList.add('hidden');
+                        
+                        // Parse mock content matching the filename keywords to demonstrate scope extraction
+                        let extractedText = `【從檔案 "${fileName}" 解析出之考試大綱】\n`;
+                        if (fileName.toLowerCase().includes('math') || fileName.includes('數')) {
+                            extractedText += `1. 分數加減混合計算（包含帶分數與真分數的化簡）。\n2. 簡易的分數乘以整數原理。\n3. 文字題：小明有一箱積木，把其中的 2/5 贈送他人後，還剩下多少塊。`;
+                            document.getElementById('config-subject').value = '數學';
+                        } else if (fileName.toLowerCase().includes('science') || fileName.includes('常') || fileName.includes('環保')) {
+                            extractedText += `1. 水的三態：冰、水、水蒸氣與吸熱放熱作用。\n2. 減塑環保政策與垃圾分類回收機制的科學意義。\n3. 香港市區的微氣候特徵。`;
+                            document.getElementById('config-subject').value = '常識';
+                        } else if (fileName.toLowerCase().includes('chinese') || fileName.includes('中')) {
+                            extractedText += `1. 排比手法之應用辨析。\n2. 閱讀課文《大自然的呼喚》理解段落大意。\n3. 重點語意拼音與精準生字詞。`;
+                            document.getElementById('config-subject').value = '中文';
+                        } else {
+                            extractedText += `1. 核心文法：Present Perfect Tense (現在完成式) 動詞變形與時間介詞。\n2. 香港學術單詞庫精華詞彙。\n3. 閱讀文章脈絡解析與是非辨析判斷。`;
+                            document.getElementById('config-subject').value = '英文';
+                        }
+                        
+                        scopeArea.value = extractedText;
+                        switchInputTab('text'); // Switch visual tab to show parsed text
+                    }, 500);
+                }
+                bar.style.width = percent + '%';
+                textNum.innerText = percent + '%';
+            }, 150);
+        }
+
+        function removeFile() {
+            document.getElementById('file-input').value = '';
+            document.getElementById('file-list').classList.add('hidden');
+            document.getElementById('dropzone').classList.remove('hidden');
+            document.getElementById('parse-loader').classList.add('hidden');
+            document.getElementById('parse-bar').style.width = '0%';
+        }
+
+        // API settings operations
+        function openApiModal() {
+            document.getElementById('api-modal').classList.remove('hidden');
+        }
+
+        function closeApiModal() {
+            document.getElementById('api-modal').classList.add('hidden');
+        }
+
+        function saveApiKey() {
+            const key = document.getElementById('api-key-input').value.trim();
+            if (key) {
+                localStorage.setItem('gemini_api_key', key);
+                updateApiStatusUI(true);
+                closeApiModal();
+            } else {
+                alert('請輸入有效的 API Key');
+            }
+        }
+
+        function clearApiKey() {
+            localStorage.removeItem('gemini_api_key');
+            document.getElementById('api-key-input').value = '';
+            updateApiStatusUI(false);
+            closeApiModal();
+        }
+
+        function loadApiKey() {
+            const key = localStorage.getItem('gemini_api_key');
+            if (key) {
+                document.getElementById('api-key-input').value = key;
+                updateApiStatusUI(true);
+            } else {
+                updateApiStatusUI(false);
+            }
+        }
+
+        function updateApiStatusUI(isActive) {
+            const dot = document.getElementById('api-dot');
+            const text = document.getElementById('api-text');
+            const btn = document.getElementById('api-status-btn');
+
+            if (isActive) {
+                dot.className = "h-2 w-2 rounded-full bg-emerald-500 animate-pulse";
+                text.innerText = "智能 API 模式已啟動";
+                btn.className = "flex items-center gap-2 text-sm bg-emerald-50 text-emerald-700 px-4 py-2 rounded-xl border border-emerald-200 transition";
+            } else {
+                dot.className = "h-2 w-2 rounded-full bg-amber-500";
+                text.innerText = "模擬生成模式 (未輸入 API Key)";
+                btn.className = "flex items-center gap-2 text-sm bg-slate-50 hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-xl border border-slate-200 transition";
+            }
+        }
+
+        // Active prompt compiler and dispatch handler
+        async function generatePaper() {
+            const subject = document.getElementById('config-subject').value;
+            const grade = document.getElementById('config-grade').value;
+            const diff = document.getElementById('config-difficulty').value;
+            const targetMarks = document.getElementById('config-total-marks').value;
+            const scopeText = document.getElementById('scope-text').value;
+            const customPrompt = document.getElementById('custom-prompt').value;
+            
+            // Synced Labels to canvas header
+            document.getElementById('label-subject').innerText = subject;
+            document.getElementById('label-grade').innerText = grade;
+            document.getElementById('label-difficulty').innerText = diff;
+            document.getElementById('label-target-marks').innerText = targetMarks;
+            document.getElementById('label-header-total').innerText = targetMarks;
+
+            // Generate Button UI Animation
+            const genBtn = document.getElementById('generate-btn');
+            const originalHTML = genBtn.innerHTML;
+            genBtn.disabled = true;
+            genBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> AI 正在構建完美試卷，請稍候...`;
+
+            // Active API Key Checking
+            const apiKey = localStorage.getItem('gemini_api_key');
+            
+            if (apiKey) {
+                try {
+                    // Assemble Question Type Config to pass to Prompt
+                    const typesWanted = [];
+                    if (document.getElementById('type-mc').checked) typesWanted.push(`選擇題 (數量: ${document.getElementById('type-mc-count').value})`);
+                    if (document.getElementById('type-blank').checked) typesWanted.push(`填充題 (數量: ${document.getElementById('type-blank-count').value})`);
+                    if (document.getElementById('type-tf').checked) typesWanted.push(`是非題 (數量: ${document.getElementById('type-tf-count').value})`);
+                    if (document.getElementById('type-short').checked) typesWanted.push(`問答題 (數量: ${document.getElementById('type-short-count').value})`);
+
+                    const structuredPrompt = `
+You are an expert curriculum examiner in Hong Kong.
+Generate an exam paper in strictly valid JSON format, with questions matching the following configurations:
+- Subject: ${subject}
+- Grade Level: ${grade}
+- Difficulty: ${diff}
+- Exam Syllabus/Scope: "${scopeText}"
+- Custom Instructions: ${customPrompt}
+- Question Types to include: ${typesWanted.join(', ')}
+
+Please return EXACTLY a JSON object with this key structure:
+{
+  "mc": [
+    { "q": "Question 1 text here", "options": ["A. option", "B. option", "C. option", "D. option"], "ans": "A. option", "explanation": "Why this is correct" }
+  ],
+  "blank": [
+    { "q": "Question text with ______ blank", "ans": "correct word", "explanation": "Detailed grammar or math steps explanation" }
+  ],
+  "tf": [
+    { "q": "True or False statement here", "ans": "T or F", "explanation": "Explanation for answer" }
+  ],
+  "short": [
+    { "q": "Open ended or long answer question here", "ans": "Model answer and scoring standard text here", "explanation": "Explanation text" }
+  ]
+}
+Make sure all content is perfectly in traditional Chinese (except English subject questions, which must be in English with Traditional Chinese headers and explanations where appropriate). Do not include any markdown wrap or codeblock markers like \`\`\`json, just the pure json object string.`;
+
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: structuredPrompt }] }],
+                            generationConfig: { responseMimeType: "application/json" }
+                        })
+                    });
+
+                    if (!response.ok) throw new Error('API 響應出錯，請確認 Key 的有效性或配額。');
+                    
+                    const resData = await response.json();
+                    const rawJson = resData.candidates[0].content.parts[0].text;
+                    const parsedPaper = JSON.parse(rawJson);
+                    
+                    renderQuestionsToCanvas(parsedPaper);
+                    switchViewTab('questions');
+
+                } catch (err) {
+                    alert('Gemini API 生成失敗：' + err.message + '\n系統將為您自動切換至智能模擬模式生成試卷。');
+                    fallbackToMockGeneration(subject);
+                }
+            } else {
+                // Mock generator execution
+                setTimeout(() => {
+                    fallbackToMockGeneration(subject);
+                }, 1000);
+            }
+
+            genBtn.disabled = false;
+            genBtn.innerHTML = originalHTML;
+        }
+
+        // Mock processor based on selected subject keywords
+        function fallbackToMockGeneration(subject) {
+            const dataSet = prebakedQuestions[subject] || prebakedQuestions['英文'];
+            
+            // Filter enabled question types
+            const finalPaper = {};
+            if (document.getElementById('type-mc').checked) finalPaper.mc = dataSet.mc;
+            if (document.getElementById('type-blank').checked) finalPaper.blank = dataSet.blank;
+            if (document.getElementById('type-tf').checked) finalPaper.tf = dataSet.tf;
+            if (document.getElementById('type-short').checked) finalPaper.short = dataSet.short;
+
+            renderQuestionsToCanvas(finalPaper);
+            switchViewTab('questions');
+        }
+
+        // Display compiled paper to interactive layout zone
+        function renderQuestionsToCanvas(paper) {
+            const qArea = document.getElementById('questions-area');
+            const aArea = document.getElementById('answers-area');
+            
+            qArea.innerHTML = '';
+            aArea.innerHTML = '';
+
+            let mainPartCounter = 1;
+            let ansPartHTML = '';
+
+            // 1. Render MC
+            if (paper.mc && paper.mc.length > 0) {
+                const partLetter = getPartHeaderLetter(mainPartCounter++);
+                let mcHTML = `
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center border-b border-slate-900 pb-1">
+                            <h4 class="font-black text-md text-slate-900">${partLetter}. 選擇題 (Multiple Choice Questions)</h4>
+                            <span class="text-xs font-bold bg-slate-100 px-2 py-0.5 rounded border border-slate-300">每題 5 分</span>
+                        </div>
+                        <ol class="space-y-4 pl-4 list-decimal">
+                `;
+                
+                let mcAnsHTML = `<div class="p-3 bg-slate-50 rounded-xl border border-slate-200"><h5 class="font-bold text-slate-800 mb-2">${partLetter}. 選擇題答案</h5><div class="grid grid-cols-2 md:grid-cols-3 gap-3">`;
+
+                paper.mc.forEach((item, index) => {
+                    mcHTML += `
+                        <li class="relative group pl-1">
+                            <p contenteditable="true" class="font-semibold text-sm outline-none border-b border-transparent hover:border-slate-300">${item.q}</p>
+                            <div class="grid grid-cols-2 gap-2 mt-2 pl-4">
+                                ${item.options.map((opt, oIdx) => `<div contenteditable="true" class="text-xs outline-none hover:bg-slate-50 rounded px-1">${opt}</div>`).join('')}
+                            </div>
+                            <button onclick="this.closest('li').remove()" class="no-print absolute top-0 -right-8 h-6 w-6 rounded hover:bg-red-50 text-slate-300 hover:text-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                        </li>
+                    `;
+
+                    mcAnsHTML += `
+                        <div class="text-xs">
+                            <span class="font-bold text-slate-500">第 ${index+1} 題：</span>
+                            <span class="font-extrabold text-brand-600 bg-indigo-50 px-1.5 py-0.5 rounded">${item.ans}</span>
+                            <p class="text-[10px] text-slate-400 mt-1">${item.explanation}</p>
+                        </div>
+                    `;
+                });
+
+                mcHTML += `</ol></div>`;
+                mcAnsHTML += `</div></div>`;
+                qArea.innerHTML += mcHTML;
+                ansPartHTML += mcAnsHTML;
+            }
+
+            // 2. Render Blanks
+            if (paper.blank && paper.blank.length > 0) {
+                const partLetter = getPartHeaderLetter(mainPartCounter++);
+                let blankHTML = `
+                    <div class="space-y-4 mt-6">
+                        <div class="flex justify-between items-center border-b border-slate-900 pb-1">
+                            <h4 class="font-black text-md text-slate-900">${partLetter}. 填充題 (Fill in the Blanks)</h4>
+                            <span class="text-xs font-bold bg-slate-100 px-2 py-0.5 rounded border border-slate-300">每題 5 分</span>
+                        </div>
+                        <ol class="space-y-4 pl-4 list-decimal">
+                `;
+
+                let blankAnsHTML = `<div class="p-3 bg-slate-50 rounded-xl border border-slate-200 mt-4"><h5 class="font-bold text-slate-800 mb-2">${partLetter}. 填充題答案</h5><div class="grid grid-cols-2 md:grid-cols-3 gap-3">`;
+
+                paper.blank.forEach((item, index) => {
+                    blankHTML += `
+                        <li class="relative group pl-1">
+                            <p contenteditable="true" class="font-semibold text-sm outline-none border-b border-transparent hover:border-slate-300">${item.q}</p>
+                            <button onclick="this.closest('li').remove()" class="no-print absolute top-0 -right-8 h-6 w-6 rounded hover:bg-red-50 text-slate-300 hover:text-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                        </li>
+                    `;
+
+                    blankAnsHTML += `
+                        <div class="text-xs">
+                            <span class="font-bold text-slate-500">第 ${index+1} 題：</span>
+                            <span class="font-extrabold text-brand-600 bg-indigo-50 px-1.5 py-0.5 rounded">${item.ans}</span>
+                            <p class="text-[10px] text-slate-400 mt-1">${item.explanation}</p>
+                        </div>
+                    `;
+                });
+
+                blankHTML += `</ol></div>`;
+                blankAnsHTML += `</div></div>`;
+                qArea.innerHTML += blankHTML;
+                ansPartHTML += blankAnsHTML;
+            }
+
+            // 3. Render True/False
+            if (paper.tf && paper.tf.length > 0) {
+                const partLetter = getPartHeaderLetter(mainPartCounter++);
+                let tfHTML = `
+                    <div class="space-y-4 mt-6">
+                        <div class="flex justify-between items-center border-b border-slate-900 pb-1">
+                            <h4 class="font-black text-md text-slate-900">${partLetter}. 是非題 (True or False Statements)</h4>
+                            <span class="text-xs font-bold bg-slate-100 px-2 py-0.5 rounded border border-slate-300">每題 5 分</span>
+                        </div>
+                        <ol class="space-y-4 pl-4 list-decimal">
+                `;
+
+                let tfAnsHTML = `<div class="p-3 bg-slate-50 rounded-xl border border-slate-200 mt-4"><h5 class="font-bold text-slate-800 mb-2">${partLetter}. 是非題答案</h5><div class="grid grid-cols-2 md:grid-cols-3 gap-3">`;
+
+                paper.tf.forEach((item, index) => {
+                    tfHTML += `
+                        <li class="relative group pl-1 flex justify-between items-start gap-4">
+                            <p contenteditable="true" class="font-semibold text-sm outline-none border-b border-transparent hover:border-slate-300 flex-1">${item.q}</p>
+                            <span class="font-bold text-sm text-slate-400 shrink-0 select-none"> ( T / F ) </span>
+                            <button onclick="this.closest('li').remove()" class="no-print absolute top-0 -right-8 h-6 w-6 rounded hover:bg-red-50 text-slate-300 hover:text-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                        </li>
+                    `;
+
+                    tfAnsHTML += `
+                        <div class="text-xs">
+                            <span class="font-bold text-slate-500">第 ${index+1} 題：</span>
+                            <span class="font-extrabold text-brand-600 bg-indigo-50 px-1.5 py-0.5 rounded">${item.ans === 'T' ? '正確 (T)' : '錯誤 (F)'}</span>
+                            <p class="text-[10px] text-slate-400 mt-1">${item.explanation}</p>
+                        </div>
+                    `;
+                });
+
+                tfHTML += `</ol></div>`;
+                tfAnsHTML += `</div></div>`;
+                qArea.innerHTML += tfHTML;
+                ansPartHTML += tfAnsHTML;
+            }
+
+            // 4. Render Short Answer
+            if (paper.short && paper.short.length > 0) {
+                const partLetter = getPartHeaderLetter(mainPartCounter++);
+                let shortHTML = `
+                    <div class="space-y-4 mt-6">
+                        <div class="flex justify-between items-center border-b border-slate-900 pb-1">
+                            <h4 class="font-black text-md text-slate-900">${partLetter}. 綜合問答題及分析 (Short Answer & Analysis)</h4>
+                            <span class="text-xs font-bold bg-slate-100 px-2 py-0.5 rounded border border-slate-300">每題 15 分</span>
+                        </div>
+                        <ol class="space-y-4 pl-4 list-decimal">
+                `;
+
+                let shortAnsHTML = `<div class="p-3 bg-slate-50 rounded-xl border border-slate-200 mt-4"><h5 class="font-bold text-slate-800 mb-2">${partLetter}. 問答題評分及參考答案</h5><div class="space-y-3">`;
+
+                paper.short.forEach((item, index) => {
+                    shortHTML += `
+                        <li class="relative group pl-1 space-y-2">
+                            <p contenteditable="true" class="font-semibold text-sm outline-none border-b border-transparent hover:border-slate-300">${item.q}</p>
+                            <!-- Print lines container -->
+                            <div class="space-y-4 pt-2">
+                                <div class="border-b border-dashed border-slate-400 h-6"></div>
+                                <div class="border-b border-dashed border-slate-400 h-6"></div>
+                                <div class="border-b border-dashed border-slate-400 h-6"></div>
+                            </div>
+                            <button onclick="this.closest('li').remove()" class="no-print absolute top-0 -right-8 h-6 w-6 rounded hover:bg-red-50 text-slate-300 hover:text-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                        </li>
+                    `;
+
+                    shortAnsHTML += `
+                        <div class="text-xs border-b border-slate-100 pb-2 last:border-0">
+                            <span class="font-bold text-slate-600 block mb-1">第 ${index+1} 題參考擬答：</span>
+                            <div class="font-medium text-slate-800 bg-indigo-50/50 p-2.5 rounded-lg border border-indigo-50 leading-relaxed whitespace-pre-wrap">${item.ans}</div>
+                            <p class="text-[10px] text-slate-400 mt-1"><i class="fa-solid fa-circle-exclamation mr-1"></i>評分說明：${item.explanation}</p>
+                        </div>
+                    `;
+                });
+
+                shortHTML += `</ol></div>`;
+                shortAnsHTML += `</div></div>`;
+                qArea.innerHTML += shortHTML;
+                ansPartHTML += shortAnsHTML;
+            }
+
+            aArea.innerHTML = ansPartHTML;
+        }
+
+        // Helper: Convert number to uppercase alphabet letter for parts
+        function getPartHeaderLetter(num) {
+            const letters = ['甲', '乙', '丙', '丁', '戊', '己'];
+            return letters[num - 1] || String.fromCharCode(64 + num);
+        }
+    </script>
+</body>
+</html>
