@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quiz 2Easy V2 - 智能試卷生成器 (多API相容 & 跨域調試優化版)</title>
+    <title>Quiz 2Easy V2 - 智能試卷生成器 (支援自訂科目與自動偵測)</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -97,9 +97,9 @@
                     <i class="fa-solid fa-graduation-cap text-xl"></i>
                 </div>
                 <div>
-                    <span class="text-xs font-semibold uppercase tracking-wider text-brand-500">Upgrade Edition V2.5</span>
+                    <span class="text-xs font-semibold uppercase tracking-wider text-brand-500">Upgrade Edition V2.6</span>
                     <h1 class="text-xl font-bold text-slate-900 flex items-center gap-2">
-                        Quiz 2Easy V2 <span class="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200 font-bold">API CORS 偵錯優化版</span>
+                        Quiz 2Easy V2 <span class="text-xs bg-indigo-50 text-brand-700 px-2 py-0.5 rounded-full border border-brand-200 font-bold">自訂科目 & AI偵測版</span>
                     </h1>
                 </div>
             </div>
@@ -148,11 +148,9 @@
                     <!-- Text Input Box -->
                     <div id="input-pane-text" class="space-y-3">
                         <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">貼上溫習手冊、大綱或手寫內容：</label>
-                        <textarea id="scope-text" class="w-full h-36 p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm outline-none transition placeholder-slate-400" placeholder="例如：
-【中文科第三單元：修辭手法與課文理解】
-1. 比喻、擬人、排比修辭手法。
-2. 課文《大自然的話》深度理解。
-3. 詞彙：和煦、斑駁、盤旋、呼喚。"></textarea>
+                        <textarea id="scope-text" class="w-full h-36 p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm outline-none transition placeholder-slate-400" placeholder="如果選擇『自動偵測科目』，請直接在此貼上任何內容。AI 會自行判斷這是什麼學科並出題。
+
+例如貼上一段關於『光合作用』的維基百科內容，AI 就會自動判斷為『生物/科學』並出題。"></textarea>
                     </div>
 
                     <!-- File Upload Box (Drag and Drop) -->
@@ -199,13 +197,22 @@
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-semibold text-slate-500 mb-1.5">科目</label>
-                            <select id="config-subject" onchange="suggestScope()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500 transition">
-                                <option value="中文">中文 (Chinese)</option>
-                                <option value="英文" selected>英文 (English)</option>
-                                <option value="數學">數學 (Mathematics)</option>
-                                <option value="常識">常識 (General Studies)</option>
-                            </select>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1.5 flex justify-between items-center">
+                                科目
+                                <span class="text-[10px] text-brand-500 font-normal">可打字自訂</span>
+                            </label>
+                            <!-- UPDATED: Text input with datalist for Custom / Auto-detect Subject -->
+                            <input type="text" id="config-subject" list="subject-list" value="自動偵測 (根據範圍決定)" onchange="suggestScope()" placeholder="例如: 歷史、生物" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500 transition">
+                            <datalist id="subject-list">
+                                <option value="自動偵測 (根據範圍決定)">
+                                <option value="中文">
+                                <option value="英文">
+                                <option value="數學">
+                                <option value="常識">
+                                <option value="歷史">
+                                <option value="地理">
+                                <option value="科學">
+                            </datalist>
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-500 mb-1.5">年級</label>
@@ -345,7 +352,7 @@
                             </div>
                             
                             <div class="mt-4 flex justify-between items-center text-sm font-bold bg-slate-100 p-2 rounded border border-slate-200">
-                                <div>科目：<span id="label-subject">英文 (English)</span></div>
+                                <div>科目：<span id="label-subject" contenteditable="true" class="border-b border-dashed border-transparent hover:border-slate-400 outline-none">自動偵測中...</span></div>
                                 <div>年級：<span id="label-grade">小四 (Primary 4)</span></div>
                                 <div>難度：<span id="label-difficulty">標準 (Standard)</span></div>
                             </div>
@@ -443,7 +450,7 @@
                             </label>
                         </div>
                         <p class="text-[11px] text-slate-500 leading-relaxed">
-                            開啟此功能將會透過公用安全代理伺服器（例如 cors-anywhere）轉發 API 請求，解決 OpenAI/DeepSeek 拒絕瀏覽器直接連線的問題。
+                            開啟此功能將會透過公用安全代理伺服器轉發 API 請求，解決 OpenAI/DeepSeek 拒絕瀏覽器直接連線的問題。
                         </p>
                         <div id="cors-url-container" class="hidden">
                             <label class="block text-[10px] font-semibold text-slate-500 mb-1">自訂代理前綴 (CORS Proxy URL)</label>
@@ -502,7 +509,7 @@
                                     <span class="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-black">最推薦 & 最穩定</span>
                                 </p>
                                 <p class="text-[11px] text-slate-500 leading-relaxed">
-                                    Google Gemini 的伺服器**完全支援瀏覽器直接跨域連線**。如果你不想設定任何代理或瀏覽器插件，只需在 AI 設定中換成 Gemini API Key，即可秒速一鍵生成。
+                                    Google Gemini 的伺服器**完全支援瀏覽器直接跨域連線**。如果你不想設定任何代理，只需在設定中換成 Gemini API Key 即可秒速生成。
                                 </p>
                             </div>
                         </div>
@@ -514,32 +521,11 @@
                             <div class="h-6 w-6 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs shrink-0 font-bold">2</div>
                             <div class="space-y-1">
                                 <p class="text-xs font-bold text-slate-950 flex items-center gap-1">
-                                    <span>安裝瀏覽器防跨域插件 (CORS Unblock)</span>
-                                    <span class="text-[9px] bg-brand-100 text-brand-800 px-1.5 py-0.5 rounded font-bold">解決 OpenAI / DeepSeek 首選</span>
+                                    <span>開啟內建 CORS 代理，或安裝瀏覽器防跨域插件</span>
                                 </p>
                                 <p class="text-[11px] text-slate-500 leading-relaxed">
-                                    因為 OpenAI 和 DeepSeek 的安全機制限制，請在瀏覽器（Chrome / Edge）安裝：
-                                    <strong class="text-brand-600">「Allow CORS: Access-Control-Allow-Origin」</strong> 擴充功能，並將其啟用。啟用後重新點擊生成，便可完全繞過阻擋。
+                                    請回到設定面板開啟「CORS 防跨域代理助手」；或在瀏覽器安裝 <strong class="text-brand-600">「Allow CORS: Access-Control-Allow-Origin」</strong> 擴充功能並將其啟用。
                                 </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Solution 3: Ollama CORS setup -->
-                    <div class="border border-slate-200 rounded-2xl p-3.5 hover:border-brand-300 transition bg-slate-50/50">
-                        <div class="flex items-start gap-3">
-                            <div class="h-6 w-6 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs shrink-0 font-bold">3</div>
-                            <div class="space-y-1">
-                                <p class="text-xs font-bold text-slate-950">
-                                    如果您使用的是本地 Ollama：
-                                </p>
-                                <p class="text-[11px] text-slate-500 leading-relaxed">
-                                    必須在啟動 Ollama 前，將環境變數設定為允許跨域。
-                                </p>
-                                <div class="bg-slate-100 p-2 rounded-lg text-[10px] font-mono mt-1 text-slate-700">
-                                    <strong>Windows CMD:</strong> set OLLAMA_ORIGINS=* && ollama serve<br>
-                                    <strong>Mac/Linux Terminal:</strong> OLLAMA_ORIGINS="*" ollama serve
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -634,7 +620,7 @@
             },
             '常識': {
                 'mc': [
-                    { q: "植物主要是透過哪一個構造來吸收泥土中的水分 and 礦物質？", options: ["A. 葉片", "B. 根部", "C. 莖部", "D. 花朵"], ans: "B. 根部", explanation: "根部具有固著植物與吸收土壤水分與養分的功能。" },
+                    { q: "植物主要是透過哪一個構造來吸收泥土中的水分和礦物質？", options: ["A. 葉片", "B. 根部", "C. 莖部", "D. 花朵"], ans: "B. 根部", explanation: "根部具有固著植物與吸收土壤水分與養分的功能。" },
                     { q: "當水吸收熱量，從液態轉變為氣態的過程稱之為甚麼？", options: ["A. 凝結", "B. 蒸發", "C. 融化", "D. 昇華"], ans: "B. 蒸發", explanation: "水受熱氣化為水蒸氣的過程稱為蒸發或汽化。" }
                 ],
                 'blank': [
@@ -643,7 +629,7 @@
                 ],
                 'tf': [
                     { q: "植物的莖部只負責支撐身體，不參與水分的運輸傳導。", ans: "F", explanation: "莖部內部含有導管和篩管，是負責輸送水分和養分的交通樞紐。" },
-                    { q: "降低家庭中的用電量 and 減少搭乘燃油車，有助於降低個人的碳足跡。", ans: "T", explanation: "用電與燃油車皆會燃燒化石燃料產生溫室氣體，節電減碳最直接有效。" }
+                    { q: "降低家庭中的用電量和減少搭乘燃油車，有助於降低個人的碳足跡。", ans: "T", explanation: "用電與燃油車皆會燃燒化石燃料產生溫室氣體，節電減碳最直接有效。" }
                 ],
                 'short': [
                     { q: "請簡述地球上的「水循環」系統是如何運作的，必須包含三個核心物理轉變步驟。", ans: "1. 地表水（海洋、河流）受日照加熱【蒸發】成為水蒸氣升空。\n2. 水蒸氣在高空遇冷【凝結】成小水滴或冰晶，聚集形成雲和雨雪。\n3. 雨雪降落回地面【降水】，流入江河，完成一個循環。", explanation: "需點出蒸發、凝結、降水三個主要運作環節。" }
@@ -708,8 +694,17 @@
         function suggestScope() {
             const sub = document.getElementById('config-subject').value;
             const textarea = document.getElementById('scope-text');
+            
+            if (sub.includes('自動偵測')) {
+                textarea.placeholder = "如果選擇『自動偵測科目』，請直接在此貼上任何內容。AI 會自行判斷這是什麼學科並出題。\n\n例如貼上一段關於『光合作用』的維基百科內容，AI 就會自動判斷為『生物/科學』並出題。";
+                // Do not overwrite user's text if they are in auto-detect mode
+                return;
+            }
+
             if(mockSyllabuses[sub]) {
                 textarea.value = mockSyllabuses[sub];
+            } else {
+                textarea.placeholder = `請貼上關於【${sub}】科目的溫習手冊、大綱或內容...`;
             }
         }
 
@@ -754,6 +749,7 @@
             const bar = document.getElementById('parse-bar');
             const textNum = document.getElementById('parse-percent');
             const scopeArea = document.getElementById('scope-text');
+            const subjectInput = document.getElementById('config-subject');
 
             const interval = setInterval(() => {
                 percent += Math.floor(Math.random() * 15) + 5;
@@ -764,19 +760,29 @@
                         document.getElementById('parse-loader').classList.add('hidden');
                         
                         // Parse mock content matching the filename keywords to demonstrate scope extraction
-                        let extractedText = `【從檔案 "${fileName}" 解析出之考試大綱】\n`;
-                        if (fileName.toLowerCase().includes('math') || fileName.includes('數')) {
-                            extractedText += `1. 分數加減混合計算（包含帶分數與真分數的化簡）。\n2. 簡易的分數乘以整數原理。\n3. 文字題：小明有一箱積木，把其中的 2/5 贈送他人後，還剩下多少塊。`;
-                            document.getElementById('config-subject').value = '數學';
-                        } else if (fileName.toLowerCase().includes('science') || fileName.includes('常') || fileName.includes('環保')) {
-                            extractedText += `1. 水的三態：冰、水、水蒸氣與吸熱放熱作用。\n2. 減塑環保政策與垃圾分類回收機制的科學意義。\n3. 香港市區的微氣候特徵。`;
-                            document.getElementById('config-subject').value = '常識';
-                        } else if (fileName.toLowerCase().includes('chinese') || fileName.includes('中')) {
-                            extractedText += `1. 排比手法之應用辨析。\n2. 閱讀課文《大自然的呼喚》理解段落大意。\n3. 重點語意拼音與精準生字詞。`;
-                            document.getElementById('config-subject').value = '中文';
+                        let extractedText = `【從檔案 "${fileName}" 智能提取之知識點】\n`;
+                        
+                        // Simulate setting the subject based on filename if currently set to auto
+                        if (subjectInput.value.includes('自動偵測')) {
+                            if (fileName.toLowerCase().includes('math') || fileName.includes('數')) {
+                                extractedText += `1. 分數加減混合計算（包含帶分數與真分數的化簡）。\n2. 簡易的分數乘以整數原理。\n3. 文字題應用。`;
+                                subjectInput.value = '數學';
+                            } else if (fileName.toLowerCase().includes('science') || fileName.includes('常') || fileName.includes('環保')) {
+                                extractedText += `1. 水的三態：冰、水、水蒸氣與吸熱放熱作用。\n2. 減塑環保政策。\n3. 香港市區的微氣候特徵。`;
+                                subjectInput.value = '常識';
+                            } else if (fileName.toLowerCase().includes('chinese') || fileName.includes('中')) {
+                                extractedText += `1. 排比手法之應用辨析。\n2. 閱讀課文《大自然的呼喚》理解段落大意。\n3. 重點語意拼音與精準生字詞。`;
+                                subjectInput.value = '中文';
+                            } else if (fileName.toLowerCase().includes('history') || fileName.includes('史')) {
+                                extractedText += `1. 古代絲綢之路的貿易路線與文化交流。\n2. 漢朝的建立與發展。\n3. 歷史文獻的基礎閱讀。`;
+                                subjectInput.value = '歷史';
+                            } else {
+                                extractedText += `1. 核心文法：Present Perfect Tense (現在完成式) 動詞變形與時間介詞。\n2. 香港學術單詞庫精華詞彙。\n3. 閱讀文章脈絡解析。`;
+                                subjectInput.value = '英文';
+                            }
                         } else {
-                            extractedText += `1. 核心文法：Present Perfect Tense (現在完成式) 動詞變形與時間介詞。\n2. 香港學術單詞庫精華詞彙。\n3. 閱讀文章脈絡解析與是非辨析判斷。`;
-                            document.getElementById('config-subject').value = '英文';
+                            // Just append a generic extracted text if subject is already specifically set
+                            extractedText += `1. 文件重點第一段\n2. 核心觀念萃取\n3. 綜合應用知識點`;
                         }
                         
                         scopeArea.value = extractedText;
@@ -948,21 +954,30 @@
         }
 
         function triggerMockExecution() {
-            const subject = document.getElementById('config-subject').value;
+            let subject = document.getElementById('config-subject').value;
             fallbackToMockGeneration(subject);
         }
 
         // Active prompt compiler and dispatch handler
         async function generatePaper() {
-            const subject = document.getElementById('config-subject').value;
+            let subject = document.getElementById('config-subject').value;
             const grade = document.getElementById('config-grade').value;
             const diff = document.getElementById('config-difficulty').value;
             const targetMarks = document.getElementById('config-total-marks').value;
             const scopeText = document.getElementById('scope-text').value;
             const customPrompt = document.getElementById('custom-prompt').value;
             
+            // Logic for Auto-detect subject vs Custom subject
+            let aiSubjectPrompt = subject;
+            let displaySubject = subject;
+            
+            if (subject.includes('自動偵測')) {
+                aiSubjectPrompt = "Please infer the exact subject accurately based ONLY on the provided Exam Syllabus/Scope below. For example, if it talks about cells, the subject is Biology.";
+                displaySubject = "AI 根據範圍判斷中...";
+            }
+
             // Synced Labels to canvas header
-            document.getElementById('label-subject').innerText = subject;
+            document.getElementById('label-subject').innerText = displaySubject;
             document.getElementById('label-grade').innerText = grade;
             document.getElementById('label-difficulty').innerText = diff;
             document.getElementById('label-target-marks').innerText = targetMarks;
@@ -993,15 +1008,16 @@
                     const structuredPrompt = `
 You are an expert curriculum examiner in Hong Kong.
 Generate an exam paper in strictly valid JSON format, with questions matching the following configurations:
-- Subject: ${subject}
+- Subject: ${aiSubjectPrompt}
 - Grade Level: ${grade}
 - Difficulty: ${diff}
 - Exam Syllabus/Scope: "${scopeText}"
 - Custom Instructions: ${customPrompt}
 - Question Types to include: ${typesWanted.join(', ')}
 
-Please return EXACTLY a JSON object with this key structure:
+Please return EXACTLY a JSON object with this key structure (If you inferred the subject, replace "inferred_subject_name_here" with the actual Traditional Chinese name of the subject):
 {
+  "detected_subject": "inferred_subject_name_here",
   "mc": [
     { "q": "Question 1 text here", "options": ["A. option", "B. option", "C. option", "D. option"], "ans": "A. option", "explanation": "Why this is correct" }
   ],
@@ -1057,7 +1073,6 @@ Make sure all content is perfectly in traditional Chinese (except English subjec
 
                         // Apply CORS Proxy if enabled
                         if (config.useProxy && config.proxyUrl && (config.provider === 'openai' || config.provider === 'deepseek')) {
-                            // Trim trailing/leading slashes of proxy
                             const formattedProxy = config.proxyUrl.endsWith('/') ? config.proxyUrl : config.proxyUrl + '/';
                             apiUrl = formattedProxy + apiUrl;
                         }
@@ -1094,6 +1109,13 @@ Make sure all content is perfectly in traditional Chinese (except English subjec
                     }
                     
                     if (parsedPaper) {
+                        // Update subject label if AI detected it
+                        if (subject.includes('自動偵測') && parsedPaper.detected_subject) {
+                            document.getElementById('label-subject').innerText = parsedPaper.detected_subject + " (AI自動判斷)";
+                        } else {
+                            document.getElementById('label-subject').innerText = subject;
+                        }
+                        
                         renderQuestionsToCanvas(parsedPaper);
                         switchViewTab('questions');
                     } else {
@@ -1106,7 +1128,6 @@ Make sure all content is perfectly in traditional Chinese (except English subjec
                     if (err instanceof TypeError && err.message.includes('fetch')) {
                         displayMsg = `TypeError: ${err.message}\n這極有可能是因為瀏覽器跨域（CORS）安全機制，阻擋了網頁直接向 AI 伺服器傳送請求。`;
                     }
-                    // Trigger custom elegant diagnostic report
                     openDiagnosticsModal(displayMsg);
                 }
             } else {
@@ -1136,8 +1157,21 @@ Make sure all content is perfectly in traditional Chinese (except English subjec
 
         // Mock processor based on selected subject keywords
         function fallbackToMockGeneration(subject) {
-            const dataSet = prebakedQuestions[subject] || prebakedQuestions['英文'];
+            let dataSetKey = '英文'; // Default fallback for unknown custom subjects
             
+            if (subject.includes('中文')) dataSetKey = '中文';
+            if (subject.includes('數學') || subject.includes('數')) dataSetKey = '數學';
+            if (subject.includes('常識') || subject.includes('科學')) dataSetKey = '常識';
+            
+            const dataSet = prebakedQuestions[dataSetKey];
+            
+            // Set canvas title to whatever the user typed or detected
+            if (subject.includes('自動偵測')) {
+                document.getElementById('label-subject').innerText = dataSetKey + " (模擬AI判斷)";
+            } else {
+                document.getElementById('label-subject').innerText = subject;
+            }
+
             // Filter enabled question types
             const finalPaper = {};
             if (document.getElementById('type-mc').checked) finalPaper.mc = dataSet.mc;
