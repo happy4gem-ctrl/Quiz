@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小學互動學習王 v7 (修復版)</title>
+    <title>小學互動學習王 v8 (按鈕合併版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -84,7 +84,7 @@
                 <div class="border-t pt-4">
                     <button onclick="generateShareLink()" class="w-full bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-200 shadow-sm flex items-center justify-center space-x-2">
                         <span>🚀</span>
-                        <span>生成學生連結 / QR Code</span>
+                        <span>生成 / 查看學生連結 (QR Code)</span>
                     </button>
                 </div>
             </div>
@@ -103,12 +103,6 @@
 
                 <div id="quiz-container" class="space-y-6 divide-y divide-gray-100">
                     <p class="text-gray-400 text-center py-6 italic">等待載入題目或點擊歷史紀錄...</p>
-                </div>
-
-                <div id="student-share-action" class="hidden border-t pt-4 text-center">
-                    <button onclick="openModalDirectly()" class="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center justify-center mx-auto space-x-1">
-                        <span>🔗</span> <span>再次查看此題庫的學生連結 / QR Code</span>
-                    </button>
                 </div>
             </div>
 
@@ -140,6 +134,7 @@
     <script>
         let currentQuestions = [];
         let globalShortUrl = "";
+        let globalLastSavedStr = ""; // 用來記錄上一次生成的狀態，防止重複生成歷史紀錄
 
         // 安全 Unicode Base64 編解碼
         function utf8Btoa(str) {
@@ -154,17 +149,16 @@
             const encodedData = urlParams.get('data');
 
             if (encodedData) {
-                // 【學生模式】：隱藏不需要的面板
+                // 【學生模式】
                 document.getElementById('teacher-panel').style.display = 'none';
                 document.getElementById('history-section').style.display = 'none';
                 loadQuizFromData(encodedData);
             } else {
-                // 【老師模式】：載入歷史紀錄
+                // 【老師模式】
                 renderHistory();
             }
         }
 
-        // 1. 手動加入題目
         function addQuestion() {
             const text = document.getElementById('q-text').value.trim();
             const a = document.getElementById('opt-a').value.trim();
@@ -196,7 +190,6 @@
             pElem.innerHTML = `<span>Q${currentQuestions.length}: ${text.substring(0,12)}... (答案: ${ans})</span>`;
             previewList.appendChild(pElem);
 
-            // 重置欄位
             document.getElementById('q-text').value = '';
             document.getElementById('opt-a').value = '';
             document.getElementById('opt-b').value = '';
@@ -205,12 +198,23 @@
             document.getElementById('correct-ans').value = 'A';
         }
 
-        // 2. 核心功能：生成連結與萬無一失的防呆機制
+        // 智慧型生成 / 查看連結按鈕
         async function generateShareLink() {
             if (currentQuestions.length === 0) {
                 alert("目前題庫沒有題目，請先新增題目！");
                 return;
             }
+
+            const jsonStr = JSON.stringify(currentQuestions);
+
+            // 【智慧判斷】：如果題目沒有變動，且已經有連結了，就直接開啟 QR Code 視窗，不重複存歷史
+            if (globalShortUrl && globalLastSavedStr === jsonStr) {
+                openModalDirectly();
+                return;
+            }
+
+            // 更新最後存檔狀態
+            globalLastSavedStr = jsonStr;
 
             // 儲存至本地歷史紀錄
             const recordId = 'quiz_' + Date.now();
@@ -228,32 +232,26 @@
             localStorage.setItem('quizHistory', JSON.stringify(history));
             renderHistory();
 
-            // 打包壓縮資料
-            const jsonStr = JSON.stringify(currentQuestions);
             const base64Data = encodeURIComponent(utf8Btoa(jsonStr));
             const longUrl = `${window.location.origin}${window.location.pathname}?data=${base64Data}`;
 
             openModal("連結處理中... ⏳");
 
-            // 核心防護線：檢測是否在本地測試
             if (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                console.log("偵測到本地測試環境，自動切換至安全長連結模式。");
                 globalShortUrl = longUrl;
                 document.getElementById('short-link').value = globalShortUrl;
                 generateQRCode(globalShortUrl);
             } else {
                 try {
-                    // 線上環境向 TinyURL 要求縮網址
                     const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
                     const resText = await res.text();
                     
                     if (res.ok && resText.startsWith('http')) {
                         globalShortUrl = resText;
                     } else {
-                        throw new Error("API Return Invalid String");
+                        throw new Error("API Error");
                     }
                 } catch (e) {
-                    // 萬一線上 API 發生 CORS 封鎖或故障，自動啟動備援長連結
                     globalShortUrl = longUrl;
                 }
                 document.getElementById('short-link').value = globalShortUrl;
@@ -261,10 +259,8 @@
             }
 
             renderQuizUI(currentQuestions);
-            document.getElementById('student-share-action').classList.remove('hidden');
         }
 
-        // 3. 🧠 挑戰小測試互動渲染 (高精確還原)
         function renderQuizUI(questions) {
             const container = document.getElementById('quiz-container');
             container.innerHTML = '';
@@ -314,7 +310,6 @@
             });
         }
 
-        // 🔄 重做一次功能
         function resetQuiz() {
             if (currentQuestions.length > 0) {
                 renderQuizUI(currentQuestions);
@@ -323,7 +318,6 @@
             }
         }
 
-        // 4. 解析學生端網址
         function loadQuizFromData(encodedData) {
             try {
                 const jsonStr = utf8Atob(encodedData);
@@ -334,7 +328,6 @@
             }
         }
 
-        // 5. 左側精巧版歷史紀錄渲染
         function renderHistory() {
             const historyList = document.getElementById('history-list');
             let history = JSON.parse(localStorage.getItem('quizHistory')) || [];
@@ -371,7 +364,9 @@
                 const jsonStr = JSON.stringify(currentQuestions);
                 const base64Data = encodeURIComponent(utf8Btoa(jsonStr));
                 globalShortUrl = `${window.location.origin}${window.location.pathname}?data=${base64Data}`;
-                document.getElementById('student-share-action').classList.remove('hidden');
+                
+                // 載入歷史時，同步更新「防呆狀態」，避免點擊按鈕又重複儲存一次歷史
+                globalLastSavedStr = jsonStr;
                 
                 alert("✅ 已成功加載歷史題庫至下方測試區！");
             }
@@ -385,7 +380,6 @@
             renderHistory();
         }
 
-        // 6. 視窗控制
         function generateQRCode(text) {
             const container = document.getElementById('qrcode');
             container.innerHTML = '';
