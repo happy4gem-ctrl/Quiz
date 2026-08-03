@@ -237,28 +237,35 @@
 
             openModal("連結處理中... ⏳");
 
-            if (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                globalShortUrl = longUrl;
-                document.getElementById('short-link').value = globalShortUrl;
-                generateQRCode(globalShortUrl);
-            } else {
-                try {
-                    const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
-                    const resText = await res.text();
-                    
-                    if (res.ok && resText.startsWith('http')) {
-                        globalShortUrl = resText;
-                    } else {
-                        throw new Error("API Error");
-                    }
-                } catch (e) {
+            try {
+                if (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    // 本機測試環境：無法對外呼叫縮網址服務，直接使用完整連結
                     globalShortUrl = longUrl;
+                } else {
+                    // 【修正】原本使用的 tinyurl.com/api-create.php 為 TinyURL 官方已逐步淘汰的舊版端點，
+                    // 現時經常直接回傳 400 錯誤，導致縮短連結功能失效。
+                    // 改用仍然有效、具備 CORS 支援的 v.gd（is.gd 姊妹服務）。
+                    globalShortUrl = await shortenUrl(longUrl);
                 }
-                document.getElementById('short-link').value = globalShortUrl;
-                generateQRCode(globalShortUrl);
+            } catch (e) {
+                console.error("縮短連結失敗，改用完整連結：", e);
+                globalShortUrl = longUrl;
             }
 
+            document.getElementById('short-link').value = globalShortUrl;
+            generateQRCode(globalShortUrl);
             renderQuizUI(currentQuestions);
+        }
+
+        // 嘗試呼叫縮網址 API，失敗時拋出錯誤讓上層 fallback 使用完整連結
+        async function shortenUrl(longUrl) {
+            const res = await fetch(`https://v.gd/create.php?format=simple&url=${encodeURIComponent(longUrl)}`);
+            const resText = (await res.text()).trim();
+
+            if (res.ok && resText.startsWith('http')) {
+                return resText;
+            }
+            throw new Error("縮網址 API 未回傳有效連結: " + resText);
         }
 
         function renderQuizUI(questions) {
@@ -383,13 +390,22 @@
         function generateQRCode(text) {
             const container = document.getElementById('qrcode');
             container.innerHTML = '';
-            new QRCode(container, {
-                text: text,
-                width: 170,
-                height: 170,
-                colorDark : "#0f172a",
-                colorLight : "#f8fafc"
-            });
+            try {
+                // 【修正】原本沒有指定 correctLevel，qrcode.js 預設使用最高容錯等級 H，
+                // 可承載的資料量非常少；題目一多，連結變長就會超出容量而拋出例外，
+                // 導致 QR Code 完全生成不到。改用最低容錯等級 L，大幅提升可容納的連結長度。
+                new QRCode(container, {
+                    text: text,
+                    width: 170,
+                    height: 170,
+                    colorDark: "#0f172a",
+                    colorLight: "#f8fafc",
+                    correctLevel: QRCode.CorrectLevel.L
+                });
+            } catch (e) {
+                console.error("QRCode 生成失敗：", e);
+                container.innerHTML = `<p class="text-[11px] text-red-500 px-3 leading-relaxed">⚠️ 題目內容太多，連結過長<br>無法生成 QR Code，<br>請直接複製下方連結分享</p>`;
+            }
         }
 
         function openModal(loadingText) {
@@ -410,9 +426,29 @@
 
         function copyLink() {
             const linkInput = document.getElementById('short-link');
+            const text = linkInput.value;
+
+            // 優先使用現代 Clipboard API，失敗時（例如非 https 環境）退回 execCommand
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert("✅ 學生連結已成功複製到剪貼簿！");
+                }).catch(() => {
+                    fallbackCopy(linkInput);
+                });
+            } else {
+                fallbackCopy(linkInput);
+            }
+        }
+
+        function fallbackCopy(linkInput) {
             linkInput.select();
-            document.execCommand("copy");
-            alert("✅ 學生連結已成功複製到剪貼簿！");
+            linkInput.setSelectionRange(0, 99999);
+            try {
+                document.execCommand("copy");
+                alert("✅ 學生連結已成功複製到剪貼簿！");
+            } catch (e) {
+                alert("⚠️ 自動複製失敗，請手動長按選取連結文字複製。");
+            }
         }
     </script>
 </body>
